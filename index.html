@@ -1,0 +1,2219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>GanaderApp — Gestión de Finca</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1F3A2E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GanaderApp">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --verde: #1F3A2E;
+  --verde-2: #2C5240;
+  --verde-3: #3E6B54;
+  --crema: #F3EFE4;
+  --crema-2: #FFFDF8;
+  --cuero: #6B4226;
+  --cuero-2: #8B5E3C;
+  --oro: #C99A3B;
+  --oro-2: #E0BC6B;
+  --rust: #A63D2F;
+  --sage: #8B9B7E;
+  --text: #2A241C;
+  --text-mut: #6E6656;
+  --border: #DDD4C0;
+  --shadow: 0 2px 10px rgba(42,36,28,0.08);
+  --shadow-lg: 0 12px 32px rgba(42,36,28,0.18);
+  --radius: 10px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--crema);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+h1,h2,h3,.display{font-family:'Fraunces',serif;}
+.mono{font-family:'JetBrains Mono',monospace;}
+a{color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+::selection{background:var(--oro-2);}
+
+/* ---------- Layout shell ---------- */
+#app{display:flex;min-height:100vh;}
+
+.sidebar{
+  width:236px;
+  background:var(--verde);
+  color:var(--crema-2);
+  display:flex;
+  flex-direction:column;
+  padding:22px 14px;
+  position:fixed;
+  top:0;left:0;bottom:0;
+  z-index:40;
+}
+.brand{
+  display:flex;align-items:center;gap:10px;
+  padding:4px 8px 22px 8px;
+  border-bottom:1px solid rgba(255,255,255,0.12);
+  margin-bottom:16px;
+}
+.brand-mark{width:34px;height:34px;flex:none;}
+.brand-text{line-height:1.05;}
+.brand-text .t1{font-family:'Fraunces',serif;font-weight:700;font-size:17px;letter-spacing:0.2px;}
+.brand-text .t2{font-size:10.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(--oro-2);margin-top:2px;}
+
+.nav{display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto;}
+.nav-item{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 12px;border-radius:8px;
+  color:rgba(255,253,248,0.72);
+  font-size:14px;font-weight:500;
+  border:none;background:transparent;text-align:left;width:100%;
+  transition:background .15s, color .15s;
+}
+.nav-item svg{width:18px;height:18px;flex:none;opacity:0.85;}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:#fff;}
+.nav-item.active{background:var(--oro);color:var(--verde);font-weight:600;}
+.nav-item.active svg{opacity:1;}
+
+.sidebar-foot{
+  border-top:1px solid rgba(255,255,255,0.12);
+  padding-top:12px;margin-top:12px;
+  font-size:11.5px;color:rgba(255,253,248,0.5);
+}
+.finca-name{color:var(--oro-2);font-weight:600;font-size:13px;margin-bottom:3px;}
+
+.main{
+  margin-left:236px;
+  flex:1;
+  display:flex;flex-direction:column;
+  min-height:100vh;
+  width:calc(100% - 236px);
+}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 28px;
+  background:var(--crema-2);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:20;
+}
+.topbar h1{font-size:21px;margin:0;font-weight:600;}
+.topbar .sub{font-size:12.5px;color:var(--text-mut);margin-top:2px;}
+.topbar-actions{display:flex;gap:10px;align-items:center;}
+
+#content{padding:24px 28px 100px 28px;flex:1;}
+
+.mobile-topbar{display:none;}
+.bottom-nav{display:none;}
+
+/* ---------- Buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 16px;border-radius:8px;border:1px solid transparent;
+  font-size:13.5px;font-weight:600;
+  background:var(--verde);color:#fff;
+}
+.btn:hover{background:var(--verde-2);}
+.btn.ghost{background:transparent;color:var(--verde);border-color:var(--border);}
+.btn.ghost:hover{background:rgba(31,58,46,0.06);}
+.btn.gold{background:var(--oro);color:var(--verde);}
+.btn.gold:hover{background:var(--oro-2);}
+.btn.danger{background:transparent;color:var(--rust);border-color:rgba(166,61,47,0.35);}
+.btn.danger:hover{background:rgba(166,61,47,0.08);}
+.btn.sm{padding:6px 11px;font-size:12.5px;}
+.icon-btn{
+  width:32px;height:32px;border-radius:7px;border:1px solid var(--border);
+  background:var(--crema-2);display:inline-flex;align-items:center;justify-content:center;
+  color:var(--text-mut);
+}
+.icon-btn:hover{color:var(--rust);border-color:var(--rust);}
+.btn:disabled,.icon-btn:disabled{opacity:0.35;cursor:not-allowed;pointer-events:none;}
+.btn:disabled:hover,.icon-btn:disabled:hover{background:inherit;color:inherit;border-color:inherit;}
+.icon-btn.edit:hover{color:var(--verde);border-color:var(--verde);}
+.icon-btn svg{width:15px;height:15px;}
+
+/* Dentro de celdas de tabla, los íconos van planos (sin caja propia) para integrarse
+   con la fila; solo muestran su fondo/borde al pasar el mouse o si están activos. */
+.actions-cell{display:flex;gap:4px;align-items:center;}
+.actions-cell .icon-btn{
+  border-color:transparent;background:transparent;width:30px;height:30px;
+}
+.actions-cell .icon-btn:hover{background:rgba(166,61,47,0.08);border-color:transparent;}
+.actions-cell .icon-btn.edit:hover{background:rgba(31,58,46,0.08);border-color:transparent;}
+.actions-cell .icon-btn:disabled{opacity:0.3;background:transparent;}
+
+/* ---------- KPI cards ---------- */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.kpi-card{
+  background:var(--crema-2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 18px;position:relative;overflow:hidden;
+}
+.kpi-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--stripe,var(--oro));
+}
+.kpi-label{font-size:11.5px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-mut);font-weight:600;}
+.kpi-value{font-family:'Fraunces',serif;font-size:26px;font-weight:600;margin-top:6px;}
+.kpi-note{font-size:12px;color:var(--text-mut);margin-top:4px;}
+.kpi-note.up{color:var(--verde-3);}
+.kpi-note.down{color:var(--rust);}
+
+.section-row{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:16px;}
+@media(max-width:1100px){.section-row{grid-template-columns:1fr;}}
+
+.card{
+  background:var(--crema-2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 20px;
+}
+.card h3{font-size:15px;margin:0 0 14px 0;display:flex;align-items:center;justify-content:space-between;font-weight:600;}
+.card h3 .tag{font-size:10.5px;background:var(--crema);color:var(--text-mut);padding:2px 8px;border-radius:20px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+
+.alert-list{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;}
+.alert-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 11px;border-radius:8px;background:rgba(166,61,47,0.06);
+  border:1px solid rgba(166,61,47,0.15);font-size:13px;
+}
+.alert-item.warn{background:rgba(201,154,59,0.1);border-color:rgba(201,154,59,0.28);}
+.alert-item .dot{width:7px;height:7px;border-radius:50%;background:var(--rust);flex:none;}
+.alert-item.warn .dot{background:var(--oro);}
+.alert-item b{font-weight:600;}
+.empty-note{color:var(--text-mut);font-size:13px;padding:10px 0;}
+
+/* ---------- Toolbar / filters ---------- */
+.toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;margin-bottom:16px;flex-wrap:wrap;
+}
+.toolbar-left{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+input[type=text],input[type=number],input[type=date],select,textarea{
+  font-family:'Inter',sans-serif;
+  padding:8px 11px;border:1px solid var(--border);border-radius:7px;
+  background:#fff;font-size:13.5px;color:var(--text);
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--oro-2);outline-offset:0;border-color:var(--oro);}
+.search-box{position:relative;}
+.search-box input{padding-left:32px;width:220px;}
+.search-box svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--text-mut);}
+
+/* ---------- Table ---------- */
+.table-wrap{background:var(--crema-2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+thead th{
+  text-align:left;padding:11px 14px;background:var(--crema);
+  font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-mut);
+  font-weight:700;border-bottom:1px solid var(--border);white-space:nowrap;
+}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr{transition:background .12s;}
+tbody tr:hover{background:rgba(201,154,59,0.06);}
+tbody tr.clickable{cursor:pointer;}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+.pill.green{background:rgba(62,107,84,0.14);color:var(--verde-3);}
+.pill.gold{background:rgba(201,154,59,0.18);color:#8a6a1f;}
+.pill.rust{background:rgba(166,61,47,0.14);color:var(--rust);}
+.pill.grey{background:rgba(110,102,86,0.14);color:var(--text-mut);}
+.num-pos{color:var(--verde-3);font-weight:600;}
+.num-neg{color:var(--rust);font-weight:600;}
+
+/* ---------- Modal ---------- */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(31,25,17,0.5);
+  display:flex;align-items:center;justify-content:center;z-index:100;
+  padding:20px;opacity:0;animation:fadeIn .15s forwards;
+}
+@keyframes fadeIn{to{opacity:1;}}
+.modal{
+  background:var(--crema-2);border-radius:14px;max-width:560px;width:100%;
+  max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-lg);
+  border:1px solid var(--border);
+}
+.modal.wide{max-width:760px;}
+.modal-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 22px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--crema-2);z-index:2;
+}
+.modal-head h3{margin:0;font-size:17px;font-weight:600;}
+.modal-close{background:none;border:none;font-size:20px;color:var(--text-mut);line-height:1;padding:4px;}
+.modal-close:hover{color:var(--rust);}
+.modal-body{padding:20px 22px;}
+.modal-foot{padding:16px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--crema-2);}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-grid.one-col{grid-template-columns:1fr;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field.full{grid-column:1/-1;}
+.field label{font-size:12px;font-weight:600;color:var(--text-mut);}
+.field label .req{color:var(--rust);}
+.field select,.field input,.field textarea{width:100%;}
+.field textarea{resize:vertical;min-height:64px;}
+
+.subsection{margin-top:20px;padding-top:16px;border-top:1px dashed var(--border);}
+.subsection-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.subsection-head h4{margin:0;font-size:13px;font-weight:700;color:var(--cuero);text-transform:uppercase;letter-spacing:.5px;}
+.mini-list{display:flex;flex-direction:column;gap:6px;}
+.mini-row{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:8px 10px;background:var(--crema);border-radius:7px;font-size:12.5px;
+}
+.mini-row .mr-main{flex:1;}
+.mini-row .mr-sub{color:var(--text-mut);font-size:11.5px;}
+
+.toast-wrap{position:fixed;bottom:22px;right:22px;z-index:200;display:flex;flex-direction:column;gap:8px;}
+.toast{
+  background:var(--verde);color:#fff;padding:11px 16px;border-radius:8px;
+  font-size:13px;box-shadow:var(--shadow-lg);animation:slideUp .2s;max-width:320px;
+}
+.toast.danger{background:var(--rust);}
+@keyframes slideUp{from{transform:translateY(10px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+
+.empty-state{
+  text-align:center;padding:60px 20px;color:var(--text-mut);
+}
+.empty-state svg{width:46px;height:46px;margin-bottom:14px;opacity:.5;}
+.empty-state p{font-size:14px;margin:0 0 14px 0;}
+
+.stamp{
+  display:inline-flex;align-items:center;gap:6px;
+  border:1.5px dashed var(--cuero-2);color:var(--cuero);
+  padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.5px;
+}
+
+/* ---------- Detail modal specifics ---------- */
+.detail-header-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}
+.dh-item{background:var(--crema);border-radius:8px;padding:10px 12px;}
+.dh-item .dl{font-size:10.5px;text-transform:uppercase;color:var(--text-mut);font-weight:700;letter-spacing:.4px;}
+.dh-item .dv{font-size:15px;font-weight:600;margin-top:3px;font-family:'JetBrains Mono',monospace;}
+
+.progress-bar{height:8px;background:var(--crema);border-radius:6px;overflow:hidden;}
+.progress-bar > div{height:100%;background:var(--oro);}
+
+/* ---------- Login screen ---------- */
+#loginScreen{
+  position:fixed;inset:0;background:var(--verde);
+  display:flex;align-items:center;justify-content:center;z-index:500;padding:20px;
+}
+#loginScreen.hidden{display:none;}
+.login-card{
+  background:var(--crema-2);border-radius:16px;padding:36px 32px;width:100%;max-width:380px;
+  box-shadow:var(--shadow-lg);
+}
+.login-brand{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px;}
+.login-brand .t1{font-family:'Fraunces',serif;font-weight:700;font-size:22px;color:var(--verde);}
+.login-brand .t2{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--cuero);}
+.login-card .field{margin-bottom:14px;}
+.login-card label{font-size:12px;font-weight:600;color:var(--text-mut);display:block;margin-bottom:5px;}
+.login-card input{width:100%;padding:10px 12px;}
+.login-error{
+  background:rgba(166,61,47,0.1);border:1px solid rgba(166,61,47,0.3);color:var(--rust);
+  font-size:12.5px;padding:9px 11px;border-radius:7px;margin-bottom:14px;display:none;
+}
+.login-error.show{display:block;}
+.login-status{text-align:center;color:var(--text-mut);font-size:12.5px;margin-top:14px;}
+#loginSubmitBtn{width:100%;justify-content:center;padding:11px;}
+.sync-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,253,248,0.55);}
+.sync-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--sage);}
+.sync-badge.offline .dot{background:var(--rust);}
+.logout-link{color:var(--oro-2);cursor:pointer;text-decoration:underline;font-size:11px;}
+
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .main{margin-left:0;width:100%;}
+  .mobile-topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 16px;background:var(--verde);color:#fff;position:sticky;top:0;z-index:30;
+  }
+  .mobile-topbar .brand{border:none;padding:0;margin:0;}
+  .topbar{padding:14px 16px;}
+  .topbar h1{font-size:18px;}
+  #content{padding:16px 14px 90px 14px;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .detail-header-grid{grid-template-columns:1fr 1fr;}
+  .bottom-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;
+    background:var(--verde);z-index:40;
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+    justify-content:space-around;box-shadow:0 -4px 14px rgba(0,0,0,0.15);
+    overflow-x:auto;
+  }
+  .bn-item{
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    background:none;border:none;color:rgba(255,255,255,0.6);font-size:9.5px;
+    padding:6px 8px;border-radius:8px;flex:none;min-width:58px;font-weight:600;
+  }
+  .bn-item svg{width:19px;height:19px;}
+  .bn-item.active{color:var(--oro-2);}
+  .toolbar{flex-direction:column;align-items:stretch;}
+  .search-box input{width:100%;}
+  .table-wrap{overflow-x:auto;}
+}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-brand">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="19" stroke="#C99A3B" stroke-width="1.5"/>
+        <path d="M12 16c0-3 2-5 4-5s3 2 3 4-1 3-1 5 1 4 1 4M28 16c0-3-2-5-4-5s-3 2-3 4 1 3 1 5-1 4-1 4" stroke="#C99A3B" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M17 30h6" stroke="#C99A3B" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <div class="t1">GanaderApp</div>
+      <div class="t2">Acceso a la finca</div>
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <form id="loginForm">
+      <div class="field">
+        <label>Correo electrónico</label>
+        <input type="email" id="loginEmail" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="loginPassword" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn gold" id="loginSubmitBtn">Iniciar sesión</button>
+    </form>
+    <div class="login-status" id="loginStatus">Conectando con la base de datos en la nube...</div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <aside class="sidebar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="19" stroke="#E0BC6B" stroke-width="1.5"/>
+        <path d="M12 16c0-3 2-5 4-5s3 2 3 4-1 3-1 5 1 4 1 4M28 16c0-3-2-5-4-5s-3 2-3 4 1 3 1 5-1 4-1 4" stroke="#E0BC6B" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M17 30h6" stroke="#E0BC6B" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <div class="brand-text">
+        <div class="t1">GanaderApp</div>
+        <div class="t2">Gestión de finca</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-foot">
+      <div class="finca-name" id="sidebarFincaName">Mi Finca</div>
+      <div style="font-size:11px;color:rgba(255,253,248,0.6);margin-bottom:6px;" id="sidebarRole">Rol: —</div>
+      <div class="sync-badge" id="syncBadge"><span class="dot"></span><span id="syncBadgeText">Sincronizado en la nube</span></div>
+      <div style="margin-top:8px;"><span class="logout-link" id="btnLogout">Cerrar sesión</span></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="mobile-topbar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 40 40" fill="none" width="26" height="26">
+          <circle cx="20" cy="20" r="19" stroke="#E0BC6B" stroke-width="1.5"/>
+          <path d="M12 16c0-3 2-5 4-5s3 2 3 4-1 3-1 5 1 4 1 4M28 16c0-3-2-5-4-5s-3 2-3 4 1 3 1 5-1 4-1 4" stroke="#E0BC6B" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M17 30h6" stroke="#E0BC6B" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <div class="brand-text"><div class="t1" style="color:#fff;font-size:15px;">GanaderApp</div></div>
+      </div>
+    </div>
+
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitle">Dashboard</h1>
+        <div class="sub" id="pageSub">Resumen general de la finca</div>
+      </div>
+      <div class="topbar-actions" id="topbarActions"></div>
+    </div>
+
+    <div id="content"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav" id="bottomNav"></nav>
+<div id="modalRoot"></div>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script type="module">
+/* =========================================================
+   GanaderApp — motor de datos + UI
+   Almacenamiento: Firebase Firestore (nube) con caché local en
+   memoria + persistencia offline (IndexedDB) para trabajar sin señal.
+   ========================================================= */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  getFirestore, doc, collection, setDoc, deleteDoc, getDoc, getDocs, onSnapshot, writeBatch
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCOqSgURN6nCh-o8emPfhTp9GHypXGhcHY",
+  authDomain: "bd-finca-97.firebaseapp.com",
+  projectId: "bd-finca-97",
+  storageBucket: "bd-finca-97.firebasestorage.app",
+  messagingSenderId: "973835630522",
+  appId: "1:973835630522:web:ff727069e5f8397e024f83",
+  measurementId: "G-GEXYWXDFYQ"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+let db;
+try {
+  db = initializeFirestore(firebaseApp, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+} catch (e) {
+  // Si ya se inicializó antes (recarga en caliente) o el navegador no soporta
+  // la caché persistente, usamos la instancia estándar (sigue funcionando online).
+  db = getFirestore(firebaseApp);
+}
+const auth = getAuth(firebaseApp);
+
+const FINCA_ID = 'finca1';
+const ENTITIES = ['potreros','semovientes','lotes','movimientos','insumos','activos_otros','inversiones','proyectos'];
+const fincaDocRef = () => doc(db, 'fincas', FINCA_ID);
+const colRef = (entity) => collection(db, 'fincas', FINCA_ID, entity);
+
+/* ---------- Caché local (lo que la UI lee de forma síncrona) ---------- */
+let CACHE = { finca: {id:FINCA_ID, nombre:'Mi Finca', ubicacion:'', hectareas_totales:0} };
+ENTITIES.forEach(e => CACHE[e] = []);
+let unsubscribers = [];
+
+const uid = () => 'id_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+const todayISO = () => new Date().toISOString().slice(0,10);
+const money = n => 'Bs ' + (Number(n)||0).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2});
+const moneyShort = n => {
+  n = Number(n)||0;
+  if(Math.abs(n) >= 1000000) return (n/1000000).toFixed(1)+'M';
+  if(Math.abs(n) >= 1000) return (n/1000).toFixed(1)+'k';
+  return n.toFixed(0);
+};
+const fmtDate = d => { if(!d) return '—'; const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('es-VE',{day:'2-digit',month:'short',year:'numeric'}); };
+const ageFromDate = d => {
+  if(!d) return '—';
+  const born = new Date(d+'T00:00:00'); const now = new Date();
+  let months = (now.getFullYear()-born.getFullYear())*12 + (now.getMonth()-born.getMonth());
+  if(months < 0) months = 0;
+  if(months < 12) return months + ' m';
+  const y = Math.floor(months/12), m = months%12;
+  return y + 'a ' + m + 'm';
+};
+
+/* ---------- API síncrona que usa el resto de la app (sin cambios en la UI) ---------- */
+function getAll(entity){ return CACHE[entity] || []; }
+function getById(entity, id){ return getAll(entity).find(x => x.id === id); }
+function getFinca(){ return CACHE.finca; }
+
+function upsertItem(entity, obj){
+  const arr = getAll(entity);
+  const i = arr.findIndex(x => x.id === obj.id);
+  if(i >= 0) arr[i] = obj; else arr.push(obj);
+  setDoc(doc(colRef(entity), obj.id), obj).catch(err => {
+    console.error(err); toast('No se pudo guardar en la nube (se reintentará al recuperar conexión)', true);
+  });
+  return obj;
+}
+function removeItem(entity, id){
+  CACHE[entity] = getAll(entity).filter(x => x.id !== id);
+  deleteDoc(doc(colRef(entity), id)).catch(err => {
+    console.error(err); toast('No se pudo eliminar en la nube (se reintentará al recuperar conexión)', true);
+  });
+}
+function saveFinca(f){
+  CACHE.finca = f;
+  setDoc(fincaDocRef(), f).catch(err => { console.error(err); toast('No se pudo guardar en la nube', true); });
+}
+// Reemplaza por completo una colección (usado por Configuración → Importar respaldo)
+async function replaceCollectionFS(entity, arr){
+  const existing = getAll(entity);
+  const batch = writeBatch(db);
+  existing.forEach(o => batch.delete(doc(colRef(entity), o.id)));
+  arr.forEach(o => { if(!o.id) o.id = uid(); batch.set(doc(colRef(entity), o.id), o); });
+  await batch.commit();
+}
+// Escribe varios documentos nuevos de una vez (usado por los datos de ejemplo)
+async function seedCollectionFS(entity, arr){
+  const batch = writeBatch(db);
+  arr.forEach(o => batch.set(doc(colRef(entity), o.id), o));
+  await batch.commit();
+}
+
+/* =========================================================
+   ROLES Y PERMISOS
+   ========================================================= */
+const ROLES = {
+  admin:     {label:'Administrador',        desc:'Acceso total a todos los módulos y a la gestión de usuarios.'},
+  encargado: {label:'Encargado de finca',   desc:'Gestiona semovientes, potreros, bodega, maquinaria e infraestructura.'},
+  contable:  {label:'Contable / Finanzas',  desc:'Gestiona finanzas, inversiones y proyectos.'},
+  lectura:   {label:'Solo lectura',         desc:'Puede ver todos los módulos, sin crear, editar ni eliminar.'},
+};
+// Qué roles pueden crear/editar en cada módulo (además de 'admin', que siempre puede)
+const MODULE_ROLES = {
+  semovientes: ['encargado'],
+  potreros:    ['encargado'],
+  lotes:       ['encargado','contable'],
+  insumos:     ['encargado'],
+  activos:     ['encargado'],
+  finanzas:    ['contable'],
+  proyectos:   ['contable'],
+};
+function canEdit(moduleKey){
+  const role = STATE.role;
+  if(!role) return false;
+  if(role === 'admin') return true;
+  return (MODULE_ROLES[moduleKey] || []).includes(role);
+}
+function canDelete(){ return STATE.role === 'admin'; }
+function roleLabel(r){ return (ROLES[r] || {}).label || r || '—'; }
+function newButtonHTML(moduleKey, id, label){
+  const ok = canEdit(moduleKey);
+  return `<button class="btn gold" id="${id}" ${ok?'':'disabled title="Tu rol no tiene permiso para esto"'}>${ICONS.plus}${label}</button>`;
+}
+function ghostButtonHTML(moduleKey, id, label){
+  const ok = canEdit(moduleKey);
+  return `<button class="btn ghost" id="${id}" ${ok?'':'disabled title="Tu rol no tiene permiso para esto"'}>${ICONS.plus}${label}</button>`;
+}
+function actionsCellHTML(moduleKey, id){
+  const edit = canEdit(moduleKey);
+  const del = canDelete();
+  return `<td class="actions-cell" onclick="event.stopPropagation()">
+    <button class="icon-btn edit" data-edit="${id}" ${edit?'':'disabled title="Tu rol no permite editar"'}>${ICONS.edit}</button>
+    <button class="icon-btn" data-del="${id}" ${del?'':'disabled title="Solo un administrador puede eliminar"'}>${ICONS.trash}</button>
+  </td>`;
+}
+
+const usuarioDocRef = (uid) => doc(db, 'usuarios', uid);
+const usuariosColRef = () => collection(db, 'usuarios');
+
+async function ensureUserRole(user){
+  const uRef = usuarioDocRef(user.uid);
+  const snap = await getDoc(uRef);
+  if(snap.exists()){
+    STATE.role = snap.data().rol || 'lectura';
+    return;
+  }
+  // El primer usuario que inicia sesión en todo el sistema queda como admin automáticamente
+  const allSnap = await getDocs(usuariosColRef());
+  const rol = allSnap.empty ? 'admin' : 'lectura';
+  const data = {uid:user.uid, email:user.email||'', nombre:user.email||'', rol};
+  await setDoc(uRef, data);
+  STATE.role = rol;
+}
+
+// Solo se usa cuando el rol es admin: lista de todos los usuarios para asignarles rol
+let usuariosCache = [];
+let usuariosError = null;
+function subscribeUsuariosIfAdmin(){
+  if(STATE.role !== 'admin') return;
+  unsubscribers.push(onSnapshot(usuariosColRef(), snap => {
+    usuariosCache = snap.docs.map(d => d.data());
+    usuariosError = null;
+    refreshIfIdle();
+  }, err => {
+    console.error('Error listando usuarios:', err);
+    usuariosError = err.code || err.message || 'desconocido';
+    refreshIfIdle();
+  }));
+}
+function setUserRole(uid, rol){
+  setDoc(usuarioDocRef(uid), {rol}, {merge:true}).catch(err => {
+    console.error(err); toast('No se pudo actualizar el rol', true);
+  });
+}
+
+
+function startRealtimeSync(onFirstLoad){
+  unsubscribers.forEach(u => u());
+  unsubscribers = [];
+  let pending = ENTITIES.length + 1;
+  let fired = false;
+  const tick = () => { pending = Math.max(0, pending-1); if(pending===0 && !fired){ fired = true; onFirstLoad(); } };
+
+  unsubscribers.push(onSnapshot(fincaDocRef(), snap => {
+    if(snap.exists()) CACHE.finca = snap.data();
+    tick();
+    refreshIfIdle();
+  }, err => { console.error(err); setSyncStatus(false); }));
+
+  ENTITIES.forEach(entity => {
+    unsubscribers.push(onSnapshot(colRef(entity), snap => {
+      CACHE[entity] = snap.docs.map(d => d.data());
+      tick();
+      refreshIfIdle();
+    }, err => { console.error(err); setSyncStatus(false); }));
+  });
+}
+function refreshIfIdle(){
+  setSyncStatus(true);
+  const modalOpen = document.getElementById('modalRoot').innerHTML.trim() !== '';
+  if(!modalOpen && STATE.ready && ROUTES[STATE.page]) ROUTES[STATE.page]();
+}
+function setSyncStatus(ok){
+  const badge = document.getElementById('syncBadge');
+  const text = document.getElementById('syncBadgeText');
+  if(!badge) return;
+  badge.classList.toggle('offline', !ok);
+  text.textContent = ok ? 'Sincronizado en la nube' : 'Sin conexión — reintentando';
+}
+window.addEventListener('online', () => setSyncStatus(true));
+window.addEventListener('offline', () => setSyncStatus(false));
+
+/* ---------- Datos de ejemplo (solo la primera vez que se crea la finca) ---------- */
+async function ensureFincaAndSeed(){
+  const snap = await getDoc(fincaDocRef());
+  if(snap.exists()) return;
+  await setDoc(fincaDocRef(), {id:FINCA_ID, nombre:'Mi Finca', ubicacion:'', hectareas_totales:0});
+
+  const p1 = {id:uid(), nombre:'Potrero El Alto', hectareas:12, tipo_pasto:'Brachiaria', capacidad_carga:1.8, estado:'disponible'};
+  const p2 = {id:uid(), nombre:'Potrero La Vega', hectareas:8, tipo_pasto:'Guinea', capacidad_carga:1.5, estado:'en descanso'};
+  const l1 = {id:uid(), nombre:'Ceba 2026-A', fecha_creacion: todayISO(), estado:'activo'};
+  await seedCollectionFS('potreros', [p1, p2]);
+  await seedCollectionFS('lotes', [l1]);
+  await seedCollectionFS('semovientes', [
+    {id:uid(), arete:'0231', raza:'Brahman', sexo:'M', fecha_nacimiento:'2024-08-10', categoria:'ceba', peso_actual_kg:320, potrero_id:p1.id, lote_id:l1.id, estado:'activo', valor_adquisicion:800, valor_actual:1050, fecha_adquisicion:'2024-09-01', historial:[]},
+    {id:uid(), arete:'0198', raza:'Gyr', sexo:'H', fecha_nacimiento:'2022-03-15', categoria:'reproductor', peso_actual_kg:410, potrero_id:p2.id, lote_id:'', estado:'activo', valor_adquisicion:1200, valor_actual:1400, fecha_adquisicion:'2022-04-01', historial:[]},
+    {id:uid(), arete:'0305', raza:'Brahman', sexo:'H', fecha_nacimiento:'2025-01-20', categoria:'levante', peso_actual_kg:180, potrero_id:p1.id, lote_id:l1.id, estado:'activo', valor_adquisicion:500, valor_actual:620, fecha_adquisicion:'2025-02-01', historial:[]},
+  ]);
+  await seedCollectionFS('insumos', [
+    {id:uid(), nombre:'Sal mineralizada', unidad_medida:'kg', stock_actual:40, stock_minimo:50},
+    {id:uid(), nombre:'Vacuna fiebre aftosa', unidad_medida:'dosis', stock_actual:15, stock_minimo:10},
+  ]);
+  const mk = todayISO().slice(0,7);
+  await seedCollectionFS('movimientos', [
+    {id:uid(), tipo:'egreso', fecha: mk+'-05', categoria:'Alimentación', subcategoria:'Suplemento', monto:180, metodo_pago:'efectivo', centro_costo_tipo:'lote', centro_costo_id:l1.id, proveedor_cliente:'Agropecuaria Zulia'},
+    {id:uid(), tipo:'ingreso', fecha: mk+'-12', categoria:'Venta de leche/derivados', subcategoria:'', monto:650, metodo_pago:'transferencia', centro_costo_tipo:'general', centro_costo_id:'', proveedor_cliente:'Distribuidora local'},
+  ]);
+}
+
+function toast(msg, danger){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast' + (danger ? ' danger' : '');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 2600);
+}
+
+function confirmDelete(msg, cb){
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+    <div class="modal-backdrop" id="confirmBackdrop">
+      <div class="modal" style="max-width:380px;">
+        <div class="modal-body" style="padding-top:24px;">
+          <h3 style="margin:0 0 8px 0;font-size:16px;">¿Confirmar eliminación?</h3>
+          <p style="color:var(--text-mut);font-size:13.5px;margin:0;">${msg}</p>
+        </div>
+        <div class="modal-foot">
+          <button class="btn ghost" id="cancelDel">Cancelar</button>
+          <button class="btn danger" style="background:var(--rust);color:#fff;" id="okDel">Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('cancelDel').onclick = () => root.innerHTML = '';
+  document.getElementById('confirmBackdrop').onclick = (e) => { if(e.target.id==='confirmBackdrop') root.innerHTML=''; };
+  document.getElementById('okDel').onclick = () => { root.innerHTML=''; cb(); };
+}
+
+/* ---------- Icons (inline SVG, stroke set) ---------- */
+const ICONS = {
+  dashboard: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="12" width="8" height="9" rx="1.5"/><rect x="3" y="14" width="8" height="7" rx="1.5"/></svg>`,
+  cow: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 9c0-2 1.3-3.5 2.7-3.5s2 1.3 2 2.7-0.7 2-0.7 3.3 0.7 2.7 0.7 2.7M17 9c0-2-1.3-3.5-2.7-3.5s-2 1.3-2 2.7 0.7 2 0.7 3.3-0.7 2.7-0.7 2.7"/><ellipse cx="12" cy="15" rx="6" ry="5"/><circle cx="9.5" cy="14" r=".6" fill="currentColor"/><circle cx="14.5" cy="14" r=".6" fill="currentColor"/></svg>`,
+  grass: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 21c0-6 1-9 1-13M12 21c0-8 0-11-1-15M18 21c0-6-1-9-1-13"/></svg>`,
+  layers: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>`,
+  cash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 6v12M18 6v12" stroke-opacity=".5"/></svg>`,
+  box: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v9l9 5 9-5V8M12 13v9"/></svg>`,
+  wrench: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-3 3-2-2 3-3z"/></svg>`,
+  invest: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>`,
+  settings: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+  plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>`,
+  edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>`,
+  trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>`,
+  search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>`,
+  down: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>`,
+  up: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>`,
+  cattle_empty: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="14" rx="8" ry="6"/><path d="M6 9c0-2.5 1.5-4 3-4M18 9c0-2.5-1.5-4-3-4" /></svg>`,
+  export: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>`,
+};
+
+/* ---------- Navigation config ---------- */
+const NAV = [
+  {id:'dashboard', label:'Dashboard', icon:'dashboard'},
+  {id:'semovientes', label:'Semovientes', icon:'cow'},
+  {id:'potreros', label:'Potreros', icon:'grass'},
+  {id:'lotes', label:'Lotes', icon:'layers'},
+  {id:'finanzas', label:'Finanzas', icon:'cash'},
+  {id:'insumos', label:'Bodega', icon:'box'},
+  {id:'activos', label:'Maquinaria e Infra.', icon:'wrench'},
+  {id:'proyectos', label:'Inversiones y Proyectos', icon:'invest'},
+  {id:'config', label:'Configuración', icon:'settings'},
+];
+const PAGE_META = {
+  dashboard: ['Dashboard','Resumen general de la finca'],
+  semovientes: ['Semovientes','Inventario de ganado, historial clínico-reproductivo'],
+  potreros: ['Potreros','Pasturas, capacidad de carga y rotación'],
+  lotes: ['Lotes','Agrupaciones de animales y costeo real acumulado'],
+  finanzas: ['Finanzas','Ingresos y egresos por centro de costo'],
+  insumos: ['Bodega de insumos','Stock de alimento, sanidad y suplementos'],
+  activos: ['Maquinaria e infraestructura','Fichas técnicas y mantenimiento preventivo'],
+  proyectos: ['Inversiones y proyectos','Planes de acción, avance y presupuesto'],
+  config: ['Configuración','Datos de la finca y respaldo de información'],
+};
+
+let STATE = { page: 'dashboard', ready: false, role: null };
+
+function renderNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = NAV.map(n => `
+    <button class="nav-item ${STATE.page===n.id?'active':''}" data-nav="${n.id}">
+      ${ICONS[n.icon]}<span>${n.label}</span>
+    </button>`).join('');
+  nav.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => goTo(b.dataset.nav));
+
+  const bn = document.getElementById('bottomNav');
+  bn.innerHTML = NAV.filter(n=>n.id!=='config').map(n => `
+    <button class="bn-item ${STATE.page===n.id?'active':''}" data-nav="${n.id}">
+      ${ICONS[n.icon]}<span>${n.label.split(' ')[0]}</span>
+    </button>`).join('') + `<button class="bn-item ${STATE.page==='config'?'active':''}" data-nav="config">${ICONS.settings}<span>Config</span></button>`;
+  bn.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => goTo(b.dataset.nav));
+}
+
+function goTo(page){
+  STATE.page = page;
+  const meta = PAGE_META[page];
+  document.getElementById('pageTitle').textContent = meta[0];
+  document.getElementById('pageSub').textContent = meta[1];
+  document.getElementById('sidebarFincaName').textContent = getFinca().nombre || 'Mi Finca';
+  document.getElementById('sidebarRole').textContent = 'Rol: ' + roleLabel(STATE.role);
+  renderNav();
+  window.scrollTo(0,0);
+  ROUTES[page]();
+}
+
+/* =========================================================
+   Generic form builder
+   ========================================================= */
+function buildFieldHTML(f, val){
+  val = (val===undefined || val===null) ? '' : val;
+  const reqMark = f.required ? '<span class="req"> *</span>' : '';
+  let input = '';
+  if(f.type === 'select'){
+    input = `<select name="${f.key}" ${f.required?'required':''}>` +
+      (f.placeholder ? `<option value="">${f.placeholder}</option>` : '') +
+      f.options.map(o => `<option value="${o.value}" ${String(o.value)===String(val)?'selected':''}>${o.label}</option>`).join('') +
+      `</select>`;
+  } else if(f.type === 'textarea'){
+    input = `<textarea name="${f.key}" ${f.required?'required':''}>${val}</textarea>`;
+  } else {
+    input = `<input type="${f.type}" name="${f.key}" value="${val}" ${f.required?'required':''} ${f.step?`step="${f.step}"`:''} placeholder="${f.placeholder||''}">`;
+  }
+  return `<div class="field ${f.full?'full':''}"><label>${f.label}${reqMark}</label>${input}</div>`;
+}
+
+function openFormModal({title, fields, values, onSubmit, wide, extraBodyHTML, afterRenderHook}){
+  const root = document.getElementById('modalRoot');
+  values = values || {};
+  root.innerHTML = `
+    <div class="modal-backdrop" id="formBackdrop">
+      <div class="modal ${wide?'wide':''}">
+        <div class="modal-head"><h3>${title}</h3><button class="modal-close" id="formClose">&times;</button></div>
+        <form id="dynForm">
+          <div class="modal-body">
+            <div class="form-grid">
+              ${fields.map(f => buildFieldHTML(f, values[f.key])).join('')}
+            </div>
+            ${extraBodyHTML || ''}
+          </div>
+          <div class="modal-foot">
+            <button type="button" class="btn ghost" id="formCancel">Cancelar</button>
+            <button type="submit" class="btn gold">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+  const close = () => root.innerHTML = '';
+  document.getElementById('formClose').onclick = close;
+  document.getElementById('formCancel').onclick = close;
+  document.getElementById('formBackdrop').onclick = (e) => { if(e.target.id==='formBackdrop') close(); };
+  if(afterRenderHook) afterRenderHook(document.getElementById('dynForm'));
+  document.getElementById('dynForm').onsubmit = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const obj = {};
+    fields.forEach(f => obj[f.key] = fd.get(f.key));
+    onSubmit(obj, close);
+  };
+}
+
+/* =========================================================
+   Reference lookups (para selects dinámicos)
+   ========================================================= */
+function potreroOptions(){ return getAll('potreros').map(p => ({value:p.id, label:p.nombre})); }
+function loteOptions(){ return getAll('lotes').map(l => ({value:l.id, label:l.nombre})); }
+function proyectoOptions(){ return getAll('proyectos').map(p => ({value:p.id, label:p.nombre})); }
+function inversionOptions(){ return getAll('inversiones').map(i => ({value:i.id, label:i.nombre})); }
+function activoOtroOptions(){ return getAll('activos_otros').map(a => ({value:a.id, label:a.nombre_referencia})); }
+
+function centroCostoLabel(tipo, id){
+  if(tipo === 'general' || !tipo) return 'Finca (general)';
+  if(tipo === 'lote') return (getById('lotes', id)||{}).nombre || '—';
+  if(tipo === 'activo') return (getById('activos_otros', id)||{}).nombre_referencia || '—';
+  if(tipo === 'proyecto') return (getById('proyectos', id)||{}).nombre || '—';
+  return '—';
+}
+
+/* =========================================================
+   ROUTES
+   ========================================================= */
+const ROUTES = {};
+const content = () => document.getElementById('content');
+const topbarActions = () => document.getElementById('topbarActions');
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+ROUTES.dashboard = function(){
+  topbarActions().innerHTML = '';
+  const semovientes = getAll('semovientes');
+  const movimientos = getAll('movimientos');
+  const insumos = getAll('insumos');
+  const activos = getAll('activos_otros');
+  const potreros = getAll('potreros');
+  const proyectos = getAll('proyectos');
+
+  const animalesActivos = semovientes.filter(s => s.estado === 'activo');
+  const valorHato = animalesActivos.reduce((a,s)=> a + (Number(s.valor_actual)||0), 0);
+
+  const now = new Date();
+  const monthKey = now.toISOString().slice(0,7);
+  const movMes = movimientos.filter(m => (m.fecha||'').slice(0,7) === monthKey);
+  const ingresosMes = movMes.filter(m=>m.tipo==='ingreso').reduce((a,m)=>a+(Number(m.monto)||0),0);
+  const egresosMes = movMes.filter(m=>m.tipo==='egreso').reduce((a,m)=>a+(Number(m.monto)||0),0);
+  const flujoMes = ingresosMes - egresosMes;
+
+  const stockBajo = insumos.filter(i => Number(i.stock_actual) <= Number(i.stock_minimo));
+  const mantVencidos = [];
+  activos.forEach(a => (a.mantenimientos||[]).forEach(m => {
+    if(m.estado !== 'realizado' && m.fecha_programada && m.fecha_programada < todayISO()) mantVencidos.push({activo:a, m});
+    else if(m.estado === 'pendiente' && m.fecha_programada) {
+      const days = (new Date(m.fecha_programada) - now) / 86400000;
+      if(days >= 0 && days <= 7) mantVencidos.push({activo:a, m, soon:true});
+    }
+  }));
+
+  const months = [];
+  for(let i=5;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push(d.toISOString().slice(0,7));
+  }
+  const monthly = months.map(mk => {
+    const ms = movimientos.filter(m => (m.fecha||'').slice(0,7)===mk);
+    return {
+      mk,
+      ingreso: ms.filter(m=>m.tipo==='ingreso').reduce((a,m)=>a+(Number(m.monto)||0),0),
+      egreso: ms.filter(m=>m.tipo==='egreso').reduce((a,m)=>a+(Number(m.monto)||0),0),
+    };
+  });
+  const maxVal = Math.max(1, ...monthly.map(m=>Math.max(m.ingreso,m.egreso)));
+
+  const catMap = {};
+  movMes.filter(m=>m.tipo==='egreso').forEach(m => { catMap[m.categoria] = (catMap[m.categoria]||0) + Number(m.monto||0); });
+  const catArr = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const catMax = Math.max(1, ...catArr.map(c=>c[1]));
+
+  content().innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--stripe:var(--verde-3)">
+        <div class="kpi-label">Animales activos</div>
+        <div class="kpi-value">${animalesActivos.length}</div>
+        <div class="kpi-note">de ${semovientes.length} registrados en total</div>
+      </div>
+      <div class="kpi-card" style="--stripe:var(--oro)">
+        <div class="kpi-label">Valor del hato</div>
+        <div class="kpi-value">${moneyShort(valorHato)}</div>
+        <div class="kpi-note">valoración actual</div>
+      </div>
+      <div class="kpi-card" style="--stripe:${flujoMes>=0?'var(--verde-3)':'var(--rust)'}">
+        <div class="kpi-label">Flujo de caja (mes)</div>
+        <div class="kpi-value ${flujoMes>=0?'num-pos':'num-neg'}">${flujoMes>=0?'+':''}${moneyShort(flujoMes)}</div>
+        <div class="kpi-note">ingresos ${moneyShort(ingresosMes)} · egresos ${moneyShort(egresosMes)}</div>
+      </div>
+      <div class="kpi-card" style="--stripe:var(--cuero-2)">
+        <div class="kpi-label">Alertas activas</div>
+        <div class="kpi-value">${stockBajo.length + mantVencidos.length}</div>
+        <div class="kpi-note">stock bajo + mantenimiento</div>
+      </div>
+    </div>
+
+    <div class="section-row">
+      <div class="card">
+        <h3>Flujo de caja — últimos 6 meses <span class="tag">Bs</span></h3>
+        <div style="display:flex;align-items:flex-end;gap:14px;height:180px;padding:6px 4px;">
+          ${monthly.map(m => `
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;">
+              <div style="display:flex;gap:3px;align-items:flex-end;height:150px;">
+                <div title="Ingresos ${money(m.ingreso)}" style="width:12px;border-radius:3px 3px 0 0;background:var(--verde-3);height:${Math.max(3,(m.ingreso/maxVal)*150)}px;"></div>
+                <div title="Egresos ${money(m.egreso)}" style="width:12px;border-radius:3px 3px 0 0;background:var(--rust);opacity:.75;height:${Math.max(3,(m.egreso/maxVal)*150)}px;"></div>
+              </div>
+              <div style="font-size:10.5px;color:var(--text-mut);text-transform:capitalize;">${new Date(m.mk+'-02').toLocaleDateString('es-VE',{month:'short'})}</div>
+            </div>`).join('')}
+        </div>
+        <div style="display:flex;gap:16px;font-size:11.5px;color:var(--text-mut);margin-top:4px;">
+          <span><span style="display:inline-block;width:9px;height:9px;background:var(--verde-3);border-radius:2px;margin-right:5px;"></span>Ingresos</span>
+          <span><span style="display:inline-block;width:9px;height:9px;background:var(--rust);opacity:.75;border-radius:2px;margin-right:5px;"></span>Egresos</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Egresos del mes por categoría</h3>
+        ${catArr.length ? `<div style="display:flex;flex-direction:column;gap:10px;">
+          ${catArr.map(([cat,val]) => `
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px;">
+                <span>${cat || 'Sin categoría'}</span><span class="mono">${money(val)}</span>
+              </div>
+              <div class="progress-bar"><div style="width:${(val/catMax)*100}%;"></div></div>
+            </div>`).join('')}
+        </div>` : `<p class="empty-note">Aún no hay egresos registrados este mes.</p>`}
+      </div>
+    </div>
+
+    <div class="section-row">
+      <div class="card">
+        <h3>Alertas <span class="tag">${stockBajo.length + mantVencidos.length}</span></h3>
+        <div class="alert-list">
+          ${stockBajo.map(i => `<div class="alert-item"><span class="dot"></span>Stock bajo: <b>${i.nombre}</b> — ${i.stock_actual} ${i.unidad_medida} (mínimo ${i.stock_minimo})</div>`).join('')}
+          ${mantVencidos.map(x => `<div class="alert-item ${x.soon?'warn':''}"><span class="dot"></span>${x.soon?'Mantenimiento próximo':'Mantenimiento vencido'}: <b>${x.activo.nombre_referencia}</b> — ${fmtDate(x.m.fecha_programada)}</div>`).join('')}
+          ${(stockBajo.length + mantVencidos.length)===0 ? `<p class="empty-note">Todo en orden — sin alertas pendientes.</p>` : ''}
+        </div>
+      </div>
+      <div class="card">
+        <h3>Finca <span class="tag">${potreros.length} potreros</span></h3>
+        <div class="detail-header-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="dh-item"><div class="dl">Hectáreas totales</div><div class="dv">${getFinca().hectareas_totales || 0} ha</div></div>
+          <div class="dh-item"><div class="dl">Proyectos en curso</div><div class="dv">${proyectos.filter(p=>p.estado==='en curso').length}</div></div>
+          <div class="dh-item"><div class="dl">Lotes activos</div><div class="dv">${getAll('lotes').filter(l=>l.estado==='activo').length}</div></div>
+          <div class="dh-item"><div class="dl">Ítems en bodega</div><div class="dv">${insumos.length}</div></div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+/* =========================================================
+   SEMOVIENTES
+   ========================================================= */
+const SEMOVIENTE_CATEGORIAS = [
+  {value:'cria', label:'Cría'}, {value:'levante', label:'Levante'},
+  {value:'ceba', label:'Ceba'}, {value:'reproductor', label:'Reproductor'}, {value:'ordeño', label:'Ordeño'},
+];
+const HISTORIAL_TIPOS = [
+  {value:'vacuna', label:'Vacuna'}, {value:'desparasitacion', label:'Desparasitación'},
+  {value:'palpacion', label:'Palpación'}, {value:'inseminacion', label:'Inseminación'}, {value:'parto', label:'Parto'},
+];
+
+function semovienteFields(){
+  return [
+    {key:'arete', label:'Arete / chip', type:'text', required:true},
+    {key:'raza', label:'Raza', type:'text'},
+    {key:'sexo', label:'Sexo', type:'select', required:true, options:[{value:'H',label:'Hembra'},{value:'M',label:'Macho'}]},
+    {key:'fecha_nacimiento', label:'Fecha de nacimiento', type:'date'},
+    {key:'categoria', label:'Categoría', type:'select', required:true, options:SEMOVIENTE_CATEGORIAS},
+    {key:'peso_actual_kg', label:'Peso actual (kg)', type:'number', step:'0.1'},
+    {key:'potrero_id', label:'Potrero', type:'select', placeholder:'Sin asignar', options:potreroOptions()},
+    {key:'lote_id', label:'Lote', type:'select', placeholder:'Sin lote', options:loteOptions()},
+    {key:'estado', label:'Estado', type:'select', required:true, options:[{value:'activo',label:'Activo'},{value:'vendido',label:'Vendido'},{value:'de baja',label:'De baja'}]},
+    {key:'valor_adquisicion', label:'Valor de adquisición', type:'number', step:'0.01'},
+    {key:'valor_actual', label:'Valor actual', type:'number', step:'0.01'},
+    {key:'fecha_adquisicion', label:'Fecha de adquisición', type:'date'},
+  ];
+}
+
+let semoventesFilter = {q:'', categoria:'', estado:'activo'};
+
+ROUTES.semovientes = function(){
+  topbarActions().innerHTML = newButtonHTML('semovientes','btnNewSemoviente','Nuevo animal');
+  const btn = document.getElementById('btnNewSemoviente');
+  if(btn) btn.onclick = () => openSemovienteForm();
+  renderSemoventesPage();
+};
+
+function renderSemoventesPage(){
+  const all = getAll('semovientes');
+  const potreros = getAll('potreros'), lotes = getAll('lotes');
+  const filtered = all.filter(s => {
+    if(semoventesFilter.estado && s.estado !== semoventesFilter.estado) return false;
+    if(semoventesFilter.categoria && s.categoria !== semoventesFilter.categoria) return false;
+    if(semoventesFilter.q && !(s.arete||'').toLowerCase().includes(semoventesFilter.q.toLowerCase()) && !(s.raza||'').toLowerCase().includes(semoventesFilter.q.toLowerCase())) return false;
+    return true;
+  });
+
+  content().innerHTML = `
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="search-box">${ICONS.search}<input type="text" id="semQ" placeholder="Buscar por arete o raza..." value="${semoventesFilter.q}"></div>
+        <select id="semCat"><option value="">Todas las categorías</option>${SEMOVIENTE_CATEGORIAS.map(c=>`<option value="${c.value}" ${semoventesFilter.categoria===c.value?'selected':''}>${c.label}</option>`).join('')}</select>
+        <select id="semEstado">
+          <option value="activo" ${semoventesFilter.estado==='activo'?'selected':''}>Activos</option>
+          <option value="" ${semoventesFilter.estado===''?'selected':''}>Todos</option>
+          <option value="vendido" ${semoventesFilter.estado==='vendido'?'selected':''}>Vendidos</option>
+          <option value="de baja" ${semoventesFilter.estado==='de baja'?'selected':''}>De baja</option>
+        </select>
+      </div>
+      <div class="stamp">${filtered.length} animales</div>
+    </div>
+    <div class="table-wrap">
+      ${filtered.length === 0 ? emptyState('cattle_empty','Aún no hay animales que coincidan','Registra tu primer semoviente para empezar a llevar el control.') : `
+      <table>
+        <thead><tr><th>Arete</th><th>Raza</th><th>Sexo</th><th>Categoría</th><th>Edad</th><th>Peso</th><th>Potrero</th><th>Lote</th><th>Estado</th><th>Valor actual</th><th></th></tr></thead>
+        <tbody>
+          ${filtered.map(s => `
+            <tr class="clickable" data-id="${s.id}">
+              <td><b>${s.arete}</b></td>
+              <td>${s.raza||'—'}</td>
+              <td>${s.sexo==='H'?'Hembra':'Macho'}</td>
+              <td>${pillCategoria(s.categoria)}</td>
+              <td>${ageFromDate(s.fecha_nacimiento)}</td>
+              <td class="mono">${s.peso_actual_kg?s.peso_actual_kg+' kg':'—'}</td>
+              <td>${(potreros.find(p=>p.id===s.potrero_id)||{}).nombre || '—'}</td>
+              <td>${(lotes.find(l=>l.id===s.lote_id)||{}).nombre || '—'}</td>
+              <td>${pillEstadoSemoviente(s.estado)}</td>
+              <td class="mono">${money(s.valor_actual)}</td>
+              ${actionsCellHTML('semovientes', s.id)}
+            </tr>`).join('')}
+        </tbody>
+      </table>`}
+    </div>
+  `;
+  document.getElementById('semQ').oninput = e => { semoventesFilter.q = e.target.value; renderSemoventesPage(); };
+  document.getElementById('semCat').onchange = e => { semoventesFilter.categoria = e.target.value; renderSemoventesPage(); };
+  document.getElementById('semEstado').onchange = e => { semoventesFilter.estado = e.target.value; renderSemoventesPage(); };
+  content().querySelectorAll('tr[data-id]').forEach(tr => tr.onclick = () => openSemovienteDetail(tr.dataset.id));
+  content().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openSemovienteForm(getById('semovientes', b.dataset.edit)));
+  content().querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+    confirmDelete('Se eliminará el registro del animal y su historial.', () => {
+      removeItem('semovientes', b.dataset.del); toast('Animal eliminado'); renderSemoventesPage();
+    });
+  });
+}
+
+function pillCategoria(cat){
+  const map = {cria:'gold', levante:'green', ceba:'rust', reproductor:'grey', 'ordeño':'green'};
+  const label = (SEMOVIENTE_CATEGORIAS.find(c=>c.value===cat)||{}).label || cat || '—';
+  return `<span class="pill ${map[cat]||'grey'}">${label}</span>`;
+}
+function pillEstadoSemoviente(e){
+  if(e==='activo') return `<span class="pill green">Activo</span>`;
+  if(e==='vendido') return `<span class="pill gold">Vendido</span>`;
+  return `<span class="pill rust">De baja</span>`;
+}
+function emptyState(icon, title, sub){
+  return `<div class="empty-state">${ICONS[icon]||''}<p><b>${title}</b><br>${sub}</p></div>`;
+}
+
+function openSemovienteForm(existing){
+  openFormModal({
+    title: existing ? 'Editar animal' : 'Registrar animal',
+    fields: semovienteFields(),
+    values: existing || {estado:'activo', categoria:'levante', sexo:'H'},
+    onSubmit: (obj, close) => {
+      obj.id = existing ? existing.id : uid();
+      obj.historial = existing ? existing.historial : [];
+      upsertItem('semovientes', obj);
+      toast(existing ? 'Animal actualizado' : 'Animal registrado');
+      close(); renderSemoventesPage();
+    }
+  });
+}
+
+function openSemovienteDetail(id){
+  const s = getById('semovientes', id);
+  if(!s) return;
+  const root = document.getElementById('modalRoot');
+  const potrero = getById('potreros', s.potrero_id);
+  const lote = getById('lotes', s.lote_id);
+  const historial = (s.historial||[]).slice().sort((a,b)=> (b.fecha||'').localeCompare(a.fecha||''));
+
+  root.innerHTML = `
+    <div class="modal-backdrop" id="detBackdrop">
+      <div class="modal wide">
+        <div class="modal-head">
+          <h3>${s.arete} <span style="color:var(--text-mut);font-weight:400;font-size:14px;">— ${s.raza||'raza no especificada'}</span></h3>
+          <button class="modal-close" id="detClose">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="detail-header-grid">
+            <div class="dh-item"><div class="dl">Categoría</div><div class="dv">${pillCategoria(s.categoria)}</div></div>
+            <div class="dh-item"><div class="dl">Edad</div><div class="dv">${ageFromDate(s.fecha_nacimiento)}</div></div>
+            <div class="dh-item"><div class="dl">Peso actual</div><div class="dv">${s.peso_actual_kg||'—'} kg</div></div>
+            <div class="dh-item"><div class="dl">Potrero</div><div class="dv" style="font-family:'Inter';font-size:13px;">${potrero?potrero.nombre:'Sin asignar'}</div></div>
+            <div class="dh-item"><div class="dl">Lote</div><div class="dv" style="font-family:'Inter';font-size:13px;">${lote?lote.nombre:'Sin lote'}</div></div>
+            <div class="dh-item"><div class="dl">Valor actual</div><div class="dv">${money(s.valor_actual)}</div></div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-head">
+              <h4>Historial clínico-reproductivo</h4>
+              <button class="btn sm ghost" id="btnAddHist" ${canEdit('semovientes')?'':'disabled title="Tu rol no permite editar"'}>${ICONS.plus}Agregar evento</button>
+            </div>
+            <div class="mini-list" id="histList">
+              ${historial.length ? historial.map(h => `
+                <div class="mini-row">
+                  <div class="mr-main"><b>${(HISTORIAL_TIPOS.find(t=>t.value===h.tipo_evento)||{}).label || h.tipo_evento}</b> — ${h.detalle||''}
+                    <div class="mr-sub">${fmtDate(h.fecha)} ${h.costo?'· '+money(h.costo):''}</div>
+                  </div>
+                  <button class="icon-btn" data-delh="${h.id}" ${canEdit('semovientes')?'':'disabled title="Tu rol no permite editar"'}>${ICONS.trash}</button>
+                </div>`).join('') : `<p class="empty-note">Sin eventos registrados.</p>`}
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn ghost" id="detEditBtn" ${canEdit('semovientes')?'':'disabled title="Tu rol no permite editar"'}>${ICONS.edit} Editar datos</button>
+          <button class="btn gold" id="detCloseBtn">Cerrar</button>
+        </div>
+      </div>
+    </div>`;
+  const close = () => root.innerHTML = '';
+  document.getElementById('detClose').onclick = close;
+  document.getElementById('detCloseBtn').onclick = close;
+  document.getElementById('detBackdrop').onclick = (e) => { if(e.target.id==='detBackdrop') close(); };
+  document.getElementById('detEditBtn').onclick = () => { close(); openSemovienteForm(s); };
+  document.getElementById('btnAddHist').onclick = () => openHistorialForm(s, close);
+  root.querySelectorAll('[data-delh]').forEach(b => b.onclick = () => {
+    s.historial = (s.historial||[]).filter(h => h.id !== b.dataset.delh);
+    upsertItem('semovientes', s); close(); openSemovienteDetail(id);
+  });
+}
+
+function openHistorialForm(semoviente, closeParent){
+  openFormModal({
+    title: 'Agregar evento sanitario/reproductivo',
+    fields: [
+      {key:'tipo_evento', label:'Tipo de evento', type:'select', required:true, options:HISTORIAL_TIPOS},
+      {key:'fecha', label:'Fecha', type:'date', required:true},
+      {key:'costo', label:'Costo (opcional)', type:'number', step:'0.01'},
+      {key:'detalle', label:'Detalle', type:'textarea', full:true},
+    ],
+    values: {fecha: todayISO()},
+    onSubmit: (obj, close) => {
+      obj.id = uid();
+      semoviente.historial = semoviente.historial || [];
+      semoviente.historial.push(obj);
+      upsertItem('semovientes', semoviente);
+      toast('Evento agregado');
+      close();
+      if(closeParent) closeParent();
+      openSemovienteDetail(semoviente.id);
+    }
+  });
+}
+
+/* =========================================================
+   POTREROS
+   ========================================================= */
+function potreroFields(){
+  return [
+    {key:'nombre', label:'Nombre', type:'text', required:true},
+    {key:'hectareas', label:'Hectáreas', type:'number', step:'0.01', required:true},
+    {key:'tipo_pasto', label:'Tipo de pasto', type:'text'},
+    {key:'capacidad_carga', label:'Capacidad de carga (UA/ha)', type:'number', step:'0.1'},
+    {key:'estado', label:'Estado', type:'select', required:true, options:[
+      {value:'disponible',label:'Disponible'},{value:'en descanso',label:'En descanso'},{value:'sobrepastoreado',label:'Sobrepastoreado'}]},
+  ];
+}
+ROUTES.potreros = function(){
+  topbarActions().innerHTML = newButtonHTML('potreros','btnNewPotrero','Nuevo potrero');
+  const btn = document.getElementById('btnNewPotrero');
+  if(btn) btn.onclick = () => openPotreroForm();
+  renderPotrerosPage();
+};
+function renderPotrerosPage(){
+  const potreros = getAll('potreros');
+  const semovientes = getAll('semovientes').filter(s=>s.estado==='activo');
+  content().innerHTML = `
+    <div class="toolbar"><div></div><div class="stamp">${potreros.length} potreros</div></div>
+    <div class="table-wrap">
+      ${potreros.length===0 ? emptyState('grass','Sin potreros registrados','Registra las divisiones de pastoreo de tu finca.') : `
+      <table>
+        <thead><tr><th>Nombre</th><th>Hectáreas</th><th>Tipo de pasto</th><th>Capac. carga</th><th>Animales</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+          ${potreros.map(p => {
+            const nAnimales = semovientes.filter(s=>s.potrero_id===p.id).length;
+            const estMap = {disponible:'green', 'en descanso':'gold', sobrepastoreado:'rust'};
+            return `<tr>
+              <td><b>${p.nombre}</b></td>
+              <td class="mono">${p.hectareas} ha</td>
+              <td>${p.tipo_pasto||'—'}</td>
+              <td class="mono">${p.capacidad_carga||'—'}</td>
+              <td class="mono">${nAnimales}</td>
+              <td><span class="pill ${estMap[p.estado]||'grey'}">${p.estado}</span></td>
+              ${actionsCellHTML('potreros', p.id)}
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+  content().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openPotreroForm(getById('potreros', b.dataset.edit)));
+  content().querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+    confirmDelete('Los animales asignados a este potrero quedarán sin potrero.', () => {
+      removeItem('potreros', b.dataset.del); toast('Potrero eliminado'); renderPotrerosPage();
+    });
+  });
+}
+function openPotreroForm(existing){
+  openFormModal({
+    title: existing ? 'Editar potrero' : 'Nuevo potrero',
+    fields: potreroFields(),
+    values: existing || {estado:'disponible'},
+    onSubmit: (obj, close) => {
+      obj.id = existing ? existing.id : uid();
+      upsertItem('potreros', obj);
+      toast(existing ? 'Potrero actualizado' : 'Potrero creado');
+      close(); renderPotrerosPage();
+    }
+  });
+}
+
+/* =========================================================
+   LOTES
+   ========================================================= */
+function loteFields(){
+  return [
+    {key:'nombre', label:'Nombre del lote', type:'text', required:true, full:true},
+    {key:'fecha_creacion', label:'Fecha de creación', type:'date', required:true},
+    {key:'estado', label:'Estado', type:'select', required:true, options:[
+      {value:'activo',label:'Activo'},{value:'vendido',label:'Vendido'},{value:'cerrado',label:'Cerrado'}]},
+  ];
+}
+ROUTES.lotes = function(){
+  topbarActions().innerHTML = newButtonHTML('lotes','btnNewLote','Nuevo lote');
+  const btn = document.getElementById('btnNewLote');
+  if(btn) btn.onclick = () => openLoteForm();
+  renderLotesPage();
+};
+function loteCostoAcumulado(loteId){
+  return getAll('movimientos').filter(m => m.centro_costo_tipo==='lote' && m.centro_costo_id===loteId && m.tipo==='egreso')
+    .reduce((a,m)=>a+(Number(m.monto)||0),0);
+}
+function renderLotesPage(){
+  const lotes = getAll('lotes');
+  const semovientes = getAll('semovientes');
+  content().innerHTML = `
+    <div class="toolbar"><div></div><div class="stamp">${lotes.length} lotes</div></div>
+    <div class="table-wrap">
+      ${lotes.length===0 ? emptyState('layers','Sin lotes creados','Agrupa animales en lotes para calcular su costo real acumulado.') : `
+      <table>
+        <thead><tr><th>Nombre</th><th>Creación</th><th>Animales</th><th>Valor animales</th><th>Costo acumulado</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+          ${lotes.map(l => {
+            const animales = semovientes.filter(s=>s.lote_id===l.id);
+            const valorAnimales = animales.reduce((a,s)=>a+(Number(s.valor_actual)||0),0);
+            const costo = loteCostoAcumulado(l.id);
+            const estMap = {activo:'green', vendido:'gold', cerrado:'grey'};
+            return `<tr class="clickable" data-view="${l.id}">
+              <td><b>${l.nombre}</b></td>
+              <td>${fmtDate(l.fecha_creacion)}</td>
+              <td class="mono">${animales.length}</td>
+              <td class="mono">${money(valorAnimales)}</td>
+              <td class="mono num-neg">${money(costo)}</td>
+              <td><span class="pill ${estMap[l.estado]||'grey'}">${l.estado}</span></td>
+              ${actionsCellHTML('lotes', l.id)}
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+  content().querySelectorAll('[data-view]').forEach(tr => tr.onclick = () => openLoteDetail(tr.dataset.view));
+  content().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openLoteForm(getById('lotes', b.dataset.edit)));
+  content().querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+    confirmDelete('Los animales de este lote quedarán sin lote asignado.', () => {
+      removeItem('lotes', b.dataset.del); toast('Lote eliminado'); renderLotesPage();
+    });
+  });
+}
+function openLoteForm(existing){
+  openFormModal({
+    title: existing ? 'Editar lote' : 'Nuevo lote',
+    fields: loteFields(),
+    values: existing || {fecha_creacion: todayISO(), estado:'activo'},
+    onSubmit: (obj, close) => {
+      obj.id = existing ? existing.id : uid();
+      upsertItem('lotes', obj);
+      toast(existing ? 'Lote actualizado' : 'Lote creado');
+      close(); renderLotesPage();
+    }
+  });
+}
+function openLoteDetail(id){
+  const l = getById('lotes', id);
+  const animales = getAll('semovientes').filter(s=>s.lote_id===id);
+  const costo = loteCostoAcumulado(id);
+  const valorAnimales = animales.reduce((a,s)=>a+(Number(s.valor_actual)||0),0);
+  const movs = getAll('movimientos').filter(m=>m.centro_costo_tipo==='lote' && m.centro_costo_id===id)
+    .sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+    <div class="modal-backdrop" id="loteBackdrop">
+      <div class="modal wide">
+        <div class="modal-head"><h3>${l.nombre}</h3><button class="modal-close" id="loteClose">&times;</button></div>
+        <div class="modal-body">
+          <div class="detail-header-grid">
+            <div class="dh-item"><div class="dl">Animales</div><div class="dv">${animales.length}</div></div>
+            <div class="dh-item"><div class="dl">Valor animales</div><div class="dv">${moneyShort(valorAnimales)}</div></div>
+            <div class="dh-item"><div class="dl">Costo acumulado</div><div class="dv" style="color:var(--rust);">${moneyShort(costo)}</div></div>
+          </div>
+          <div class="subsection">
+            <h4 style="margin-bottom:10px;">Animales en el lote</h4>
+            ${animales.length ? `<div class="mini-list">${animales.map(a=>`<div class="mini-row"><div class="mr-main"><b>${a.arete}</b> — ${a.raza||''}<div class="mr-sub">${pillCategoria(a.categoria)}</div></div><div class="mono">${money(a.valor_actual)}</div></div>`).join('')}</div>`
+            : `<p class="empty-note">Sin animales asignados a este lote todavía.</p>`}
+          </div>
+          <div class="subsection">
+            <h4 style="margin-bottom:10px;">Movimientos financieros imputados</h4>
+            ${movs.length ? `<div class="mini-list">${movs.map(m=>`<div class="mini-row"><div class="mr-main">${m.categoria||'—'} <div class="mr-sub">${fmtDate(m.fecha)}</div></div><div class="mono ${m.tipo==='ingreso'?'num-pos':'num-neg'}">${m.tipo==='ingreso'?'+':'-'}${money(m.monto)}</div></div>`).join('')}</div>`
+            : `<p class="empty-note">Sin movimientos imputados a este lote.</p>`}
+          </div>
+        </div>
+        <div class="modal-foot"><button class="btn gold" id="loteCloseBtn">Cerrar</button></div>
+      </div>
+    </div>`;
+  const close = () => root.innerHTML = '';
+  document.getElementById('loteClose').onclick = close;
+  document.getElementById('loteCloseBtn').onclick = close;
+  document.getElementById('loteBackdrop').onclick = (e) => { if(e.target.id==='loteBackdrop') close(); };
+}
+
+/* =========================================================
+   FINANZAS (movimientos: ingresos / egresos)
+   ========================================================= */
+const CATEGORIAS_EGRESO = ['Compra de animales','Alimentación','Sanidad','Mano de obra','Combustible','Mantenimiento','Servicios','Otro'];
+const CATEGORIAS_INGRESO = ['Venta de ganado','Venta de leche/derivados','Subproductos','Alquiler de potreros','Otro'];
+
+function centroCostoOptionsFor(tipo){
+  if(tipo==='lote') return loteOptions();
+  if(tipo==='activo') return activoOtroOptions();
+  if(tipo==='proyecto') return proyectoOptions();
+  return [];
+}
+
+function movimientoFieldsBase(tipoDefault){
+  return [
+    {key:'tipo', label:'Tipo', type:'select', required:true, options:[{value:'ingreso',label:'Ingreso'},{value:'egreso',label:'Egreso'}]},
+    {key:'fecha', label:'Fecha', type:'date', required:true},
+    {key:'categoria', label:'Categoría', type:'text', required:true},
+    {key:'subcategoria', label:'Subcategoría', type:'text'},
+    {key:'monto', label:'Monto', type:'number', step:'0.01', required:true},
+    {key:'metodo_pago', label:'Método de pago', type:'select', options:[
+      {value:'efectivo',label:'Efectivo'},{value:'transferencia',label:'Transferencia'},{value:'credito',label:'Crédito'},{value:'otro',label:'Otro'}]},
+    {key:'proveedor_cliente', label:'Proveedor / cliente', type:'text', full:true},
+  ];
+}
+
+let finanzasFilter = {tipo:'', mes:''};
+
+ROUTES.finanzas = function(){
+  topbarActions().innerHTML = newButtonHTML('finanzas','btnNewMov','Nuevo movimiento');
+  const btn = document.getElementById('btnNewMov');
+  if(btn) btn.onclick = () => openMovimientoForm();
+  renderFinanzasPage();
+};
+
+function renderFinanzasPage(){
+  const all = getAll('movimientos').sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  const filtered = all.filter(m => {
+    if(finanzasFilter.tipo && m.tipo !== finanzasFilter.tipo) return false;
+    if(finanzasFilter.mes && (m.fecha||'').slice(0,7) !== finanzasFilter.mes) return false;
+    return true;
+  });
+  const totalIng = filtered.filter(m=>m.tipo==='ingreso').reduce((a,m)=>a+(Number(m.monto)||0),0);
+  const totalEgr = filtered.filter(m=>m.tipo==='egreso').reduce((a,m)=>a+(Number(m.monto)||0),0);
+
+  content().innerHTML = `
+    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px;">
+      <div class="kpi-card" style="--stripe:var(--verde-3)"><div class="kpi-label">Ingresos (filtro actual)</div><div class="kpi-value num-pos">${moneyShort(totalIng)}</div></div>
+      <div class="kpi-card" style="--stripe:var(--rust)"><div class="kpi-label">Egresos (filtro actual)</div><div class="kpi-value num-neg">${moneyShort(totalEgr)}</div></div>
+      <div class="kpi-card" style="--stripe:var(--oro)"><div class="kpi-label">Balance</div><div class="kpi-value ${(totalIng-totalEgr)>=0?'num-pos':'num-neg'}">${moneyShort(totalIng-totalEgr)}</div></div>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <select id="finTipo">
+          <option value="">Todos los tipos</option>
+          <option value="ingreso" ${finanzasFilter.tipo==='ingreso'?'selected':''}>Ingresos</option>
+          <option value="egreso" ${finanzasFilter.tipo==='egreso'?'selected':''}>Egresos</option>
+        </select>
+        <input type="month" id="finMes" value="${finanzasFilter.mes}">
+        ${finanzasFilter.mes ? `<button class="btn ghost sm" id="finClearMes">Limpiar mes</button>` : ''}
+      </div>
+      <div class="stamp">${filtered.length} movimientos</div>
+    </div>
+    <div class="table-wrap">
+      ${filtered.length===0 ? emptyState('cash','Sin movimientos registrados','Registra tu primer ingreso o egreso.') : `
+      <table>
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Centro de costo</th><th>Proveedor/Cliente</th><th>Monto</th><th></th></tr></thead>
+        <tbody>
+          ${filtered.map(m => `
+            <tr>
+              <td>${fmtDate(m.fecha)}</td>
+              <td><span class="pill ${m.tipo==='ingreso'?'green':'rust'}">${m.tipo}</span></td>
+              <td>${m.categoria}${m.subcategoria?' · '+m.subcategoria:''}</td>
+              <td>${centroCostoLabel(m.centro_costo_tipo, m.centro_costo_id)}</td>
+              <td>${m.proveedor_cliente||'—'}</td>
+              <td class="mono ${m.tipo==='ingreso'?'num-pos':'num-neg'}">${m.tipo==='ingreso'?'+':'-'}${money(m.monto)}</td>
+              ${actionsCellHTML('finanzas', m.id)}
+            </tr>`).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+  document.getElementById('finTipo').onchange = e => { finanzasFilter.tipo = e.target.value; renderFinanzasPage(); };
+  document.getElementById('finMes').onchange = e => { finanzasFilter.mes = e.target.value; renderFinanzasPage(); };
+  const clearBtn = document.getElementById('finClearMes');
+  if(clearBtn) clearBtn.onclick = () => { finanzasFilter.mes=''; renderFinanzasPage(); };
+  content().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openMovimientoForm(getById('movimientos', b.dataset.edit)));
+  content().querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+    confirmDelete('Esta acción no se puede deshacer.', () => {
+      removeItem('movimientos', b.dataset.del); toast('Movimiento eliminado'); renderFinanzasPage();
+    });
+  });
+}
+
+function openMovimientoForm(existing){
+  const ccTipo = (existing && existing.centro_costo_tipo) || 'general';
+  openFormModal({
+    title: existing ? 'Editar movimiento' : 'Nuevo movimiento',
+    wide:true,
+    fields: movimientoFieldsBase(),
+    values: existing || {fecha: todayISO(), tipo:'egreso', metodo_pago:'efectivo'},
+    extraBodyHTML: `
+      <div class="subsection">
+        <h4>Centro de costo</h4>
+        <div class="form-grid">
+          <div class="field"><label>Imputar a</label>
+            <select name="centro_costo_tipo" id="ccTipoSel">
+              <option value="general" ${ccTipo==='general'?'selected':''}>Finca (general)</option>
+              <option value="lote" ${ccTipo==='lote'?'selected':''}>Lote</option>
+              <option value="activo" ${ccTipo==='activo'?'selected':''}>Activo (maquinaria/infra.)</option>
+              <option value="proyecto" ${ccTipo==='proyecto'?'selected':''}>Proyecto</option>
+            </select>
+          </div>
+          <div class="field" id="ccIdWrap">
+            <label>Referencia</label>
+            <select name="centro_costo_id" id="ccIdSel"></select>
+          </div>
+        </div>
+      </div>`,
+    afterRenderHook: (form) => {
+      const sel = form.querySelector('#ccTipoSel');
+      const idSel = form.querySelector('#ccIdSel');
+      const populate = (tipo, selected) => {
+        const opts = centroCostoOptionsFor(tipo);
+        idSel.innerHTML = tipo==='general' ? `<option value="">—</option>` : opts.map(o=>`<option value="${o.value}" ${o.value===selected?'selected':''}>${o.label}</option>`).join('');
+        idSel.disabled = tipo==='general';
+      };
+      populate(ccTipo, existing ? existing.centro_costo_id : '');
+      sel.onchange = () => populate(sel.value, '');
+    },
+    onSubmit: (obj, close) => {
+      obj.id = existing ? existing.id : uid();
+      upsertItem('movimientos', obj);
+      toast(existing ? 'Movimiento actualizado' : 'Movimiento registrado');
+      close(); renderFinanzasPage();
+    }
+  });
+}
+
+/* =========================================================
+   INSUMOS (bodega)
+   ========================================================= */
+function insumoFields(){
+  return [
+    {key:'nombre', label:'Nombre', type:'text', required:true, full:true},
+    {key:'unidad_medida', label:'Unidad de medida', type:'select', required:true, options:[
+      {value:'kg',label:'kg'},{value:'litros',label:'litros'},{value:'dosis',label:'dosis'},{value:'unidad',label:'unidad'}]},
+    {key:'stock_actual', label:'Stock actual', type:'number', step:'0.01', required:true},
+    {key:'stock_minimo', label:'Stock mínimo (alerta)', type:'number', step:'0.01', required:true},
+  ];
+}
+ROUTES.insumos = function(){
+  topbarActions().innerHTML = newButtonHTML('insumos','btnNewInsumo','Nuevo insumo');
+  const btn = document.getElementById('btnNewInsumo');
+  if(btn) btn.onclick = () => openInsumoForm();
+  renderInsumosPage();
+};
+function renderInsumosPage(){
+  const insumos = getAll('insumos');
+  const edit = canEdit('insumos'), del = canDelete();
+  content().innerHTML = `
+    <div class="toolbar"><div></div><div class="stamp">${insumos.filter(i=>Number(i.stock_actual)<=Number(i.stock_minimo)).length} en alerta de stock</div></div>
+    <div class="table-wrap">
+      ${insumos.length===0 ? emptyState('box','Bodega vacía','Registra alimento, sanidad o suplementos para llevar el stock.') : `
+      <table>
+        <thead><tr><th>Insumo</th><th>Unidad</th><th>Stock actual</th><th>Stock mínimo</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+          ${insumos.map(i => {
+            const bajo = Number(i.stock_actual) <= Number(i.stock_minimo);
+            return `<tr>
+              <td><b>${i.nombre}</b></td>
+              <td>${i.unidad_medida}</td>
+              <td class="mono">${i.stock_actual}</td>
+              <td class="mono">${i.stock_minimo}</td>
+              <td>${bajo?'<span class="pill rust">Stock bajo</span>':'<span class="pill green">OK</span>'}</td>
+              <td class="actions-cell">
+                <button class="btn sm ghost" data-in="${i.id}" ${edit?'':'disabled title="Tu rol no permite editar stock"'}>+ Entrada</button>
+                <button class="btn sm ghost" data-out="${i.id}" ${edit?'':'disabled title="Tu rol no permite editar stock"'}>- Salida</button>
+                <button class="icon-btn edit" data-edit="${i.id}" ${edit?'':'disabled title="Tu rol no permite editar"'}>${ICONS.edit}</button>
+                <button class="icon-btn" data-del="${i.id}" ${del?'':'disabled title="Solo un administrador puede eliminar"'}>${ICONS.trash}</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+  content().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openInsumoForm(getById('insumos', b.dataset.edit)));
+  content().querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+    confirmDelete('Se eliminará el ítem de la bodega.', () => { removeItem('insumos', b.dataset.del); toast('Insumo eliminado'); renderInsumosPage(); });
+  });
+  content().querySelectorAll('[data-in]').forEach(b => b.onclick = () => adjustStock(b.dataset.in, 1));
+  content().querySelectorAll('[data-out]').forEach(b => b.onclick = () => adjustStock(b.dataset.out, -1));
+}
+function adjustStock(id, sign){
+  const i = getById('insumos', id);
+  const cantStr = prompt(`Cantidad a ${sign>0?'agregar':'retirar'} (${i.unidad_medida}):`, '');
+  if(cantStr === null) return;
+  const cant = Number(cantStr);
+  if(isNaN(cant) || cant <= 0){ toast('Cantidad inválida', true); return; }
+  i.stock_actual = Math.max(0, (Number(i.stock_actual)||0) + sign*cant);
+  upsertItem('insumos', i);
+  toast('Stock actualizado');
+  renderInsumosPage();
+}
+function openInsumoForm(existing){
+  openFormModal({
+    title: existing ? 'Editar insumo' : 'Nuevo insumo',
+    fields: insumoFields(),
+    values: existing || {unidad_medida:'kg', stock_actual:0, stock_minimo:0},
+    onSubmit: (obj, close) => {
+      obj.id = existing ? existing.id : uid();
+      upsertItem('insumos', obj);
+      toast(existing ? 'Insumo actualizado' : 'Insumo creado');
+      close(); renderInsumosPage();
+    }
+  });
+}
+
+/* =========================================================
+   ACTIVOS: MAQUINARIA E INFRAESTRUCTURA
+   ========================================================= */
+function activoOtroFields(){
+  return [
+    {key:'tipo', label:'Tipo', type:'select', required:true, options:[{value:'maquinaria',label:'Maquinaria'},{value:'infraestructura',label:'Infraestructura'}]},
+    {key:'nombre_referencia', label:'Nombre / referencia', type:'text', required:true, full:true},
+    {key:'valor_adquisicion', label:'Valor de adquisición', type:'number', step:'0.01'},
+    {key:'fecha_adquisicion', label:'Fecha de adquisición', type:'date'},
+    {key:'estado', label:'Estado', type:'select', required:true, options:[
+      {value:'activo',label:'Activo'},{value:'en mantenimiento',label:'En mantenimiento'},{value:'de baja',label:'De baja'}]},
+  ];
+}
+ROUTES.activos = function(){
+  topbarActions().innerHTML = newButtonHTML('activos','btnNewActivo','Nuevo activo');
+  const btn = document.getElementById('btnNewActivo');
+  if(btn) btn.onclick = () => openActivoOtroForm();
+  renderActivosPage();
+};
+function proximoMantenimiento(a){
+  const pend = (a.mantenimientos||[]).filter(m=>m.estado!=='realizado' && m.fecha_programada).sort((x,y)=>x.fecha_programada.localeCompare(y.fecha_programada));
+  return pend[0];
+}
+function renderActivosPage(){
+  const activos = getAll('activos_otros');
+  content().innerHTML = `
+    <div class="toolbar"><div></div><div class="stamp">${activos.length} activos</div></div>
+    <div class="table-wrap">
+      ${activos.length===0 ? emptyState('wrench','Sin maquinaria ni infraestructura registrada','Agrega equipos, corrales, cercas o galpones.') : `
+      <table>
+        <thead><tr><th>Tipo</th><th>Nombre / referencia</th><th>Adquisición</th><th>Valor</th><th>Próx. mantenimiento</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+          ${activos.map(a => {
+            const prox = proximoMantenimiento(a);
+            const vencido = prox && prox.fecha_programada < todayISO();
+            return `<tr class="clickable" data-view="${a.id}">
+              <td><span class="pill grey">${a.tipo}</span></td>
+              <td><b>${a.nombre_referencia}</b></td>
+              <td>${fmtDate(a.fecha_adquisicion)}</td>
+              <td class="mono">${money(a.valor_adquisicion)}</td>
+              <td>${prox ? `<span class="pill ${vencido?'rust':'gold'}">${fmtDate(prox.fecha_programada)}</span>` : '—'}</td>
+              <td><span class="pill ${a.estado==='activo'?'green':(a.estado==='de baja'?'rust':'gold')}">${a.estado}</span></td>
+              ${actionsCellHTML('activos', a.id)}
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+  content().querySelectorAll('[data-view]').forEach(tr => tr.onclick = () => openActivoOtroDetail(tr.dataset.view));
+  content().querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openActivoOtroForm(getById('activos_otros', b.dataset.edit)));
+  content().querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+    confirmDelete('Se eliminará el activo y su historial de mantenimiento.', () => { removeItem('activos_otros', b.dataset.del); toast('Activo eliminado'); renderActivosPage(); });
+  });
+}
+function openActivoOtroForm(existing){
+  openFormModal({
+    title: existing ? 'Editar activo' : 'Nuevo activo',
+    fields: activoOtroFields(),
+    values: existing || {tipo:'maquinaria', estado:'activo'},
+    onSubmit: (obj, close) => {
+      obj.id = existing ? existing.id : uid();
+      obj.mantenimientos = existing ? existing.mantenimientos : [];
+      upsertItem('activos_otros', obj);
+      toast(existing ? 'Activo actualizado' : 'Activo creado');
+      close(); renderActivosPage();
+    }
+  });
+}
+function openActivoOtroDetail(id){
+  const a = getById('activos_otros', id);
+  const mants = (a.mantenimientos||[]).slice().sort((x,y)=>(y.fecha_programada||'').localeCompare(x.fecha_programada||''));
+  const edit = canEdit('activos');
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+    <div class="modal-backdrop" id="actBackdrop">
+      <div class="modal wide">
+        <div class="modal-head"><h3>${a.nombre_referencia}</h3><button class="modal-close" id="actClose">&times;</button></div>
+        <div class="modal-body">
+          <div class="detail-header-grid">
+            <div class="dh-item"><div class="dl">Tipo</div><div class="dv" style="font-family:'Inter';font-size:14px;text-transform:capitalize;">${a.tipo}</div></div>
+            <div class="dh-item"><div class="dl">Valor adquisición</div><div class="dv">${money(a.valor_adquisicion)}</div></div>
+            <div class="dh-item"><div class="dl">Estado</div><div class="dv" style="font-family:'Inter';font-size:14px;">${a.estado}</div></div>
+          </div>
+          <div class="subsection">
+            <div class="subsection-head"><h4>Mantenimiento</h4><button class="btn sm ghost" id="btnAddMant" ${edit?'':'disabled title="Tu rol no permite editar"'}>${ICONS.plus}Programar</button></div>
+            <div class="mini-list">
+              ${mants.length ? mants.map(m => `
+                <div class="mini-row">
+                  <div class="mr-main"><b>${m.tipo_mantenimiento}</b> ${m.costo?'· '+money(m.costo):''}
+                    <div class="mr-sub">Programado: ${fmtDate(m.fecha_programada)} ${m.fecha_realizada?'· Realizado: '+fmtDate(m.fecha_realizada):''}</div>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;">
+                    <span class="pill ${m.estado==='realizado'?'green':(m.estado==='vencido'?'rust':'gold')}">${m.estado}</span>
+                    ${m.estado!=='realizado' ? `<button class="btn sm ghost" data-done="${m.id}" ${edit?'':'disabled title="Tu rol no permite editar"'}>Marcar realizado</button>` : ''}
+                    <button class="icon-btn" data-delm="${m.id}" ${edit?'':'disabled title="Tu rol no permite editar"'}>${ICONS.trash}</button>
+                  </div>
+                </div>`).join('') : `<p class="empty-note">Sin mantenimientos programados.</p>`}
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot"><button class="btn gold" id="actCloseBtn">Cerrar</button></div>
+      </div>
+    </div>`;
+  const close = () => root.innerHTML = '';
+  document.getElementById('actClose').onclick = close;
+  document.getElementById('actCloseBtn').onclick = close;
+  document.getElementById('actBackdrop').onclick = (e) => { if(e.target.id==='actBackdrop') close(); };
+  document.getElementById('btnAddMant').onclick = () => openMantForm(a, close);
+  root.querySelectorAll('[data-done]').forEach(b => b.onclick = () => {
+    const m = a.mantenimientos.find(x=>x.id===b.dataset.done);
+    m.estado = 'realizado'; m.fecha_realizada = todayISO();
+    upsertItem('activos_otros', a); close(); openActivoOtroDetail(id);
+  });
+  root.querySelectorAll('[data-delm]').forEach(b => b.onclick = () => {
+    a.mantenimientos = a.mantenimientos.filter(x=>x.id!==b.dataset.delm);
+    upsertItem('activos_otros', a); close(); openActivoOtroDetail(id);
+  });
+}
+function openMantForm(activo, closeParent){
+  openFormModal({
+    title: 'Programar mantenimiento',
+    fields: [
+      {key:'tipo_mantenimiento', label:'Tipo', type:'select', required:true, options:[{value:'preventivo',label:'Preventivo'},{value:'correctivo',label:'Correctivo'}]},
+      {key:'fecha_programada', label:'Fecha programada', type:'date', required:true},
+      {key:'costo', label:'Costo estimado', type:'number', step:'0.01'},
+      {key:'estado', label:'Estado', type:'select', required:true, options:[{value:'pendiente',label:'Pendiente'},{value:'realizado',label:'Realizado'}]},
+    ],
+    values: {fecha_programada: todayISO(), estado:'pendiente'},
+    onSubmit: (obj, close) => {
+      obj.id = uid();
+      activo.mantenimientos = activo.mantenimientos || [];
+      activo.mantenimientos.push(obj);
+      upsertItem('activos_otros', activo);
+      toast('Mantenimiento programado');
+      close(); if(closeParent) closeParent();
+      openActivoOtroDetail(activo.id);
+    }
+  });
+}
+
+/* =========================================================
+   INVERSIONES Y PROYECTOS
+   ========================================================= */
+function inversionFields(){
+  return [
+    {key:'nombre', label:'Nombre de la inversión', type:'text', required:true, full:true},
+    {key:'objetivo', label:'Objetivo', type:'textarea', full:true},
+    {key:'monto_presupuestado', label:'Monto presupuestado', type:'number', step:'0.01', required:true},
+    {key:'fuente_financiamiento', label:'Fuente de financiamiento', type:'select', options:[{value:'capital propio',label:'Capital propio'},{value:'credito',label:'Crédito'}]},
+    {key:'roi_esperado', label:'ROI esperado (%)', type:'number', step:'0.1'},
+    {key:'fecha_inicio', label:'Fecha de inicio', type:'date'},
+    {key:'fecha_fin_estimada', label:'Fecha fin estimada', type:'date'},
+  ];
+}
+function proyectoFields(){
+  return [
+    {key:'nombre', label:'Nombre del proyecto', type:'text', required:true, full:true},
+    {key:'inversion_id', label:'Inversión asociada', type:'select', placeholder:'Sin inversión asociada', options:inversionOptions()},
+    {key:'estado', label:'Estado', type:'select', required:true, options:[
+      {value:'planificado',label:'Planificado'},{value:'en curso',label:'En curso'},{value:'retrasado',label:'Retrasado'},{value:'completado',label:'Completado'}]},
+    {key:'avance_pct', label:'Avance (%)', type:'number', step:'1'},
+  ];
+}
+
+let proyTab = 'proyectos';
+ROUTES.proyectos = function(){
+  topbarActions().innerHTML =
+    ghostButtonHTML('proyectos','btnNewInversion','Nueva inversión') +
+    newButtonHTML('proyectos','btnNewProyecto','Nuevo proyecto');
+  const b1 = document.getElementById('btnNewInversion'); if(b1) b1.onclick = () => openInversionForm();
+  const b2 = document.getElementById('btnNewProyecto'); if(b2) b2.onclick = () => openProyectoForm();
+  renderProyectosPage();
+};
+
+function renderProyectosPage(){
+  const proyectos = getAll('proyectos');
+  const inversiones = getAll('inversiones');
+  content().innerHTML = `
+    <div class="toolbar-left" style="margin-bottom:16px;display:flex;gap:8px;">
+      <button class="btn sm ${proyTab==='proyectos'?'gold':'ghost'}" id="tabProy">Proyectos (${proyectos.length})</button>
+      <button class="btn sm ${proyTab==='inversiones'?'gold':'ghost'}" id="tabInv">Inversiones (${inversiones.length})</button>
+    </div>
+    <div id="proyContent"></div>
+  `;
+  document.getElementById('tabProy').onclick = () => { proyTab='proyectos'; renderProyectosPage(); };
+  document.getElementById('tabInv').onclick = () => { proyTab='inversiones'; renderProyectosPage(); };
+
+  const wrap = document.getElementById('proyContent');
+  if(proyTab === 'proyectos'){
+    wrap.innerHTML = proyectos.length===0 ? emptyState('invest','Sin proyectos','Crea un proyecto para darle seguimiento a una inversión.') : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Proyecto</th><th>Inversión</th><th>Avance</th><th>Gasto real</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+        ${proyectos.map(p => {
+          const inv = getById('inversiones', p.inversion_id);
+          const gasto = getAll('movimientos').filter(m=>m.centro_costo_tipo==='proyecto' && m.centro_costo_id===p.id && m.tipo==='egreso').reduce((a,m)=>a+(Number(m.monto)||0),0);
+          const estMap = {planificado:'grey', 'en curso':'gold', retrasado:'rust', completado:'green'};
+          return `<tr class="clickable" data-view="${p.id}">
+            <td><b>${p.nombre}</b></td>
+            <td>${inv?inv.nombre:'—'}</td>
+            <td style="min-width:120px;"><div class="progress-bar"><div style="width:${p.avance_pct||0}%;"></div></div><div class="mono" style="font-size:11px;margin-top:3px;">${p.avance_pct||0}%</div></td>
+            <td class="mono">${money(gasto)}</td>
+            <td><span class="pill ${estMap[p.estado]||'grey'}">${p.estado}</span></td>
+            ${actionsCellHTML('proyectos', p.id)}
+          </tr>`;
+        }).join('')}
+        </tbody></table></div>`;
+    wrap.querySelectorAll('[data-view]').forEach(tr => tr.onclick = () => openProyectoDetail(tr.dataset.view));
+    wrap.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openProyectoForm(getById('proyectos', b.dataset.edit)));
+    wrap.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+      confirmDelete('Se eliminará el proyecto, sus tareas y bitácora.', () => { removeItem('proyectos', b.dataset.del); toast('Proyecto eliminado'); renderProyectosPage(); });
+    });
+  } else {
+    wrap.innerHTML = inversiones.length===0 ? emptyState('invest','Sin inversiones registradas','Registra presupuestos por ciclo productivo.') : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Nombre</th><th>Presupuesto</th><th>Fuente</th><th>ROI esperado</th><th>Inicio</th><th></th></tr></thead>
+        <tbody>
+        ${inversiones.map(i => `<tr>
+          <td><b>${i.nombre}</b></td>
+          <td class="mono">${money(i.monto_presupuestado)}</td>
+          <td>${i.fuente_financiamiento||'—'}</td>
+          <td class="mono">${i.roi_esperado?i.roi_esperado+'%':'—'}</td>
+          <td>${fmtDate(i.fecha_inicio)}</td>
+          ${actionsCellHTML('proyectos', i.id)}
+        </tr>`).join('')}
+        </tbody></table></div>`;
+    wrap.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openInversionForm(getById('inversiones', b.dataset.edit)));
+    wrap.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+      confirmDelete('Los proyectos asociados quedarán sin inversión.', () => { removeItem('inversiones', b.dataset.del); toast('Inversión eliminada'); renderProyectosPage(); });
+    });
+  }
+}
+function openInversionForm(existing){
+  openFormModal({
+    title: existing ? 'Editar inversión' : 'Nueva inversión',
+    fields: inversionFields(),
+    values: existing || {fuente_financiamiento:'capital propio', fecha_inicio: todayISO()},
+    onSubmit: (obj, close) => {
+      obj.id = existing ? existing.id : uid();
+      upsertItem('inversiones', obj);
+      toast(existing ? 'Inversión actualizada' : 'Inversión creada');
+      close(); renderProyectosPage();
+    }
+  });
+}
+function openProyectoForm(existing){
+  openFormModal({
+    title: existing ? 'Editar proyecto' : 'Nuevo proyecto',
+    fields: proyectoFields(),
+    values: existing || {estado:'planificado', avance_pct:0},
+    onSubmit: (obj, close) => {
+      obj.id = existing ? existing.id : uid();
+      obj.tareas = existing ? existing.tareas : [];
+      obj.bitacora = existing ? existing.bitacora : [];
+      upsertItem('proyectos', obj);
+      toast(existing ? 'Proyecto actualizado' : 'Proyecto creado');
+      close(); renderProyectosPage();
+    }
+  });
+}
+function openProyectoDetail(id){
+  const p = getById('proyectos', id);
+  const inv = getById('inversiones', p.inversion_id);
+  const tareas = p.tareas || [];
+  const bitacora = (p.bitacora||[]).slice().sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  const gasto = getAll('movimientos').filter(m=>m.centro_costo_tipo==='proyecto' && m.centro_costo_id===p.id && m.tipo==='egreso').reduce((a,m)=>a+(Number(m.monto)||0),0);
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+    <div class="modal-backdrop" id="pDetBackdrop">
+      <div class="modal wide">
+        <div class="modal-head"><h3>${p.nombre}</h3><button class="modal-close" id="pDetClose">&times;</button></div>
+        <div class="modal-body">
+          <div class="detail-header-grid">
+            <div class="dh-item"><div class="dl">Inversión</div><div class="dv" style="font-family:'Inter';font-size:13px;">${inv?inv.nombre:'—'}</div></div>
+            <div class="dh-item"><div class="dl">Avance</div><div class="dv">${p.avance_pct||0}%</div></div>
+            <div class="dh-item"><div class="dl">Gasto real</div><div class="dv">${moneyShort(gasto)}</div></div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-head"><h4>Plan de acción — tareas</h4><button class="btn sm ghost" id="btnAddTarea" ${canEdit('proyectos')?'':'disabled title="Tu rol no permite editar"'}>${ICONS.plus}Agregar tarea</button></div>
+            <div class="mini-list">
+              ${tareas.length ? tareas.map(t => `
+                <div class="mini-row">
+                  <div class="mr-main"><b>${t.descripcion}</b>
+                    <div class="mr-sub">${t.responsable?t.responsable+' · ':''}${fmtDate(t.fecha_estimada)} ${t.presupuesto_asignado?'· Bs '+t.presupuesto_asignado+' asignados':''}</div>
+                  </div>
+                  <span class="pill ${t.estado==='completado'?'green':(t.estado==='retrasado'?'rust':'gold')}">${t.estado}</span>
+                  <button class="icon-btn" data-delt="${t.id}" ${canEdit('proyectos')?'':'disabled title="Tu rol no permite editar"'}>${ICONS.trash}</button>
+                </div>`).join('') : `<p class="empty-note">Sin tareas definidas.</p>`}
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-head"><h4>Bitácora de seguimiento</h4><button class="btn sm ghost" id="btnAddBit" ${canEdit('proyectos')?'':'disabled title="Tu rol no permite editar"'}>${ICONS.plus}Agregar nota</button></div>
+            <div class="mini-list">
+              ${bitacora.length ? bitacora.map(b => `
+                <div class="mini-row">
+                  <div class="mr-main">${b.nota}<div class="mr-sub">${fmtDate(b.fecha)}</div></div>
+                  <button class="icon-btn" data-delb="${b.id}" ${canEdit('proyectos')?'':'disabled title="Tu rol no permite editar"'}>${ICONS.trash}</button>
+                </div>`).join('') : `<p class="empty-note">Sin notas registradas.</p>`}
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn ghost" id="pEditBtn" ${canEdit('proyectos')?'':'disabled title="Tu rol no permite editar"'}>${ICONS.edit} Editar proyecto</button>
+          <button class="btn gold" id="pDetCloseBtn">Cerrar</button>
+        </div>
+      </div>
+    </div>`;
+  const close = () => root.innerHTML = '';
+  document.getElementById('pDetClose').onclick = close;
+  document.getElementById('pDetCloseBtn').onclick = close;
+  document.getElementById('pDetBackdrop').onclick = (e) => { if(e.target.id==='pDetBackdrop') close(); };
+  document.getElementById('pEditBtn').onclick = () => { close(); openProyectoForm(p); };
+  document.getElementById('btnAddTarea').onclick = () => openTareaForm(p, close);
+  document.getElementById('btnAddBit').onclick = () => openBitacoraForm(p, close);
+  root.querySelectorAll('[data-delt]').forEach(b => b.onclick = () => { p.tareas = p.tareas.filter(x=>x.id!==b.dataset.delt); upsertItem('proyectos', p); close(); openProyectoDetail(id); });
+  root.querySelectorAll('[data-delb]').forEach(b => b.onclick = () => { p.bitacora = p.bitacora.filter(x=>x.id!==b.dataset.delb); upsertItem('proyectos', p); close(); openProyectoDetail(id); });
+}
+function openTareaForm(proyecto, closeParent){
+  openFormModal({
+    title: 'Agregar tarea del plan de acción',
+    fields: [
+      {key:'descripcion', label:'Descripción', type:'text', required:true, full:true},
+      {key:'responsable', label:'Responsable', type:'text'},
+      {key:'fecha_estimada', label:'Fecha estimada', type:'date'},
+      {key:'presupuesto_asignado', label:'Presupuesto asignado', type:'number', step:'0.01'},
+      {key:'estado', label:'Estado', type:'select', required:true, options:[{value:'pendiente',label:'Pendiente'},{value:'en curso',label:'En curso'},{value:'completado',label:'Completado'},{value:'retrasado',label:'Retrasado'}]},
+    ],
+    values: {estado:'pendiente'},
+    onSubmit: (obj, close) => {
+      obj.id = uid();
+      proyecto.tareas = proyecto.tareas || [];
+      proyecto.tareas.push(obj);
+      upsertItem('proyectos', proyecto);
+      toast('Tarea agregada'); close(); if(closeParent) closeParent();
+      openProyectoDetail(proyecto.id);
+    }
+  });
+}
+function openBitacoraForm(proyecto, closeParent){
+  openFormModal({
+    title: 'Agregar nota de bitácora',
+    fields: [
+      {key:'fecha', label:'Fecha', type:'date', required:true},
+      {key:'nota', label:'Nota', type:'textarea', required:true, full:true},
+    ],
+    values: {fecha: todayISO()},
+    onSubmit: (obj, close) => {
+      obj.id = uid();
+      proyecto.bitacora = proyecto.bitacora || [];
+      proyecto.bitacora.push(obj);
+      upsertItem('proyectos', proyecto);
+      toast('Nota agregada'); close(); if(closeParent) closeParent();
+      openProyectoDetail(proyecto.id);
+    }
+  });
+}
+
+/* =========================================================
+   CONFIGURACIÓN
+   ========================================================= */
+ROUTES.config = function(){
+  topbarActions().innerHTML = '';
+  const f = getFinca();
+  const isAdmin = STATE.role === 'admin';
+  const entities = ['finca', ...ENTITIES];
+  content().innerHTML = `
+    <div class="section-row">
+      <div class="card">
+        <h3>Datos de la finca</h3>
+        <form id="fincaForm" class="form-grid one-col">
+          <div class="field"><label>Nombre de la finca <span class="req">*</span></label><input type="text" name="nombre" value="${f.nombre||''}" ${isAdmin?'required':'disabled'}></div>
+          <div class="field"><label>Ubicación</label><input type="text" name="ubicacion" value="${f.ubicacion||''}" ${isAdmin?'':'disabled'}></div>
+          <div class="field"><label>Hectáreas totales</label><input type="number" step="0.01" name="hectareas_totales" value="${f.hectareas_totales||''}" ${isAdmin?'':'disabled'}></div>
+          ${isAdmin ? `<div><button type="submit" class="btn gold">${ICONS.plus} Guardar datos</button></div>` : `<p class="empty-note">Solo un administrador puede editar los datos de la finca.</p>`}
+        </form>
+        <div class="subsection">
+          <h4 style="margin-bottom:8px;">Sesión</h4>
+          <p style="font-size:12.5px;color:var(--text-mut);margin:0 0 4px 0;">Conectado como <b>${(auth.currentUser && auth.currentUser.email) || '—'}</b></p>
+          <p style="font-size:12.5px;color:var(--text-mut);margin:0 0 10px 0;">Rol: <b>${roleLabel(STATE.role)}</b></p>
+          <button class="btn ghost sm" id="btnLogoutConfig">Cerrar sesión</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Respaldo de información</h3>
+        <p style="font-size:13px;color:var(--text-mut);margin-top:0;">Tus datos se guardan en la nube (Firebase Firestore) y se sincronizan automáticamente entre todos tus dispositivos. Aun así, exporta un respaldo de vez en cuando como copia de seguridad extra.</p>
+        ${isAdmin ? `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn ghost" id="btnExport">${ICONS.export} Exportar respaldo (.json)</button>
+          <button class="btn ghost" id="btnImport">${ICONS.up} Importar respaldo</button>
+          <input type="file" id="fileImport" accept="application/json" style="display:none;">
+        </div>
+        <p style="font-size:11.5px;color:var(--text-mut);margin:10px 0 0 0;">Importar reemplaza por completo los datos actuales en la nube por los del archivo.</p>
+        ` : `<p class="empty-note">Solo un administrador puede exportar o importar respaldos.</p>`}
+        <div class="subsection">
+          <h4 style="margin-bottom:8px;">Resumen de datos guardados</h4>
+          <div class="mini-list">
+            ${entities.filter(e=>e!=='finca').map(e => `<div class="mini-row"><div class="mr-main">${e}</div><div class="mono">${getAll(e).length}</div></div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    ${isAdmin ? `
+    <div class="card" style="margin-top:16px;">
+      <h3>Usuarios y roles <span class="tag">${usuariosCache.length}</span></h3>
+      <p style="font-size:12.5px;color:var(--text-mut);margin-top:0;">Los usuarios se crean desde la consola de Firebase (Authentication → Users). Aquí solo asignas su rol dentro de GanaderApp. La primera persona en iniciar sesión queda como Administrador automáticamente.</p>
+      ${usuariosError ? `
+        <div class="login-error show" style="margin-bottom:14px;">
+          No se pudo cargar la lista de usuarios (código: <b>${usuariosError}</b>). Esto casi siempre significa que las reglas de Firestore no permiten <b>listar</b> la colección "usuarios" a usuarios autenticados. Revisa que la regla tenga exactamente: <code>allow read: if request.auth != null;</code> dentro de <code>match /usuarios/{uid}</code>, y que hayas dado clic en "Publicar".
+        </div>
+      ` : ''}
+      <div class="mini-list">
+        ${usuariosCache.length ? usuariosCache.map(u => `
+          <div class="mini-row">
+            <div class="mr-main"><b>${u.nombre || u.email}</b><div class="mr-sub">${u.email}</div></div>
+            <select data-role-uid="${u.uid}" ${u.uid===(auth.currentUser&&auth.currentUser.uid)?'title="Ten cuidado al cambiar tu propio rol"':''}>
+              ${Object.keys(ROLES).map(r => `<option value="${r}" ${u.rol===r?'selected':''}>${ROLES[r].label}</option>`).join('')}
+            </select>
+          </div>`).join('') : (usuariosError ? '' : `<p class="empty-note">Aún no hay otros usuarios registrados. Pídeles que inicien sesión una vez y aparecerán aquí.</p>`)}
+      </div>
+      <div class="subsection">
+        <h4 style="margin-bottom:8px;">Diagnóstico</h4>
+        <p style="font-size:12px;color:var(--text-mut);margin:0 0 8px 0;">Si no ves a alguien que ya inició sesión, usa este botón para consultar Firestore directamente (sin caché) y ver el resultado exacto.</p>
+        <button class="btn ghost sm" id="btnDiagUsuarios">Verificar conexión con la lista de usuarios</button>
+        <pre id="diagOut" style="margin-top:10px;font-size:11.5px;background:var(--crema);padding:10px 12px;border-radius:7px;white-space:pre-wrap;display:none;"></pre>
+      </div>
+      <div class="subsection">
+        <h4 style="margin-bottom:8px;">Qué puede hacer cada rol</h4>
+        <div class="mini-list">
+          ${Object.entries(ROLES).map(([key,r]) => `<div class="mini-row"><div class="mr-main"><b>${r.label}</b><div class="mr-sub">${r.desc}</div></div></div>`).join('')}
+        </div>
+      </div>
+    </div>` : ''}
+  `;
+  if(isAdmin){
+    document.getElementById('fincaForm').onsubmit = (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const obj = {id:FINCA_ID, nombre:fd.get('nombre'), ubicacion:fd.get('ubicacion'), hectareas_totales:fd.get('hectareas_totales')};
+      saveFinca(obj);
+      toast('Datos de la finca guardados');
+      document.getElementById('sidebarFincaName').textContent = obj.nombre;
+    };
+    document.getElementById('btnExport').onclick = () => {
+      const backup = {finca:getFinca()};
+      entities.filter(e=>e!=='finca').forEach(e => backup[e] = getAll(e));
+      const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `ganaderapp_backup_${todayISO()}.json`;
+      a.click();
+      toast('Respaldo exportado');
+    };
+    document.getElementById('btnImport').onclick = () => document.getElementById('fileImport').click();
+    document.getElementById('fileImport').onchange = (e) => {
+      const file = e.target.files[0]; if(!file) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const data = JSON.parse(reader.result);
+          toast('Importando respaldo, un momento...');
+          if(data.finca) saveFinca(data.finca);
+          for(const en of ENTITIES){
+            if(Array.isArray(data[en])) await replaceCollectionFS(en, data[en]);
+          }
+          toast('Respaldo importado correctamente');
+          goTo('dashboard');
+        } catch(err){ console.error(err); toast('Archivo inválido o error al importar', true); }
+      };
+      reader.readAsText(file);
+    };
+    content().querySelectorAll('[data-role-uid]').forEach(sel => {
+      sel.onchange = () => {
+        setUserRole(sel.dataset.roleUid, sel.value);
+        toast('Rol actualizado');
+      };
+    });
+    document.getElementById('btnDiagUsuarios').onclick = async () => {
+      const out = document.getElementById('diagOut');
+      out.style.display = 'block';
+      out.textContent = 'Consultando Firestore directamente (sin caché)...';
+      try {
+        const snap = await getDocs(usuariosColRef());
+        if(snap.empty){
+          out.textContent = 'La consulta funcionó correctamente, pero Firestore devolvió 0 documentos en la colección "usuarios". Esto es raro si ya viste el documento del encargado en la consola — puede indicar que la app está apuntando a un proyecto de Firebase distinto al que estás viendo en la consola.';
+        } else {
+          const lineas = snap.docs.map(d => `• ${d.id} → email: ${d.data().email || '—'}, rol: ${d.data().rol || '—'}`);
+          out.textContent = `Se encontraron ${snap.size} documento(s) en Firestore ahora mismo:\n` + lineas.join('\n') + `\n\nSi aquí SÍ aparece el usuario pero no en la lista de arriba, recarga la página completa (F5) para forzar una reconexión.`;
+        }
+      } catch(err){
+        console.error(err);
+        out.textContent = `Error al consultar: ${err.code || ''} ${err.message || err}`;
+      }
+    };
+  }
+  const doLogout = () => signOut(auth);
+  document.getElementById('btnLogoutConfig').onclick = doLogout;
+};
+
+/* =========================================================
+   Datos de ejemplo (solo la primera vez)
+   ========================================================= */
+/* =========================================================
+   AUTENTICACIÓN Y ARRANQUE
+   ========================================================= */
+const loginScreen = document.getElementById('loginScreen');
+const appRoot = document.getElementById('app');
+const bottomNavRoot = document.getElementById('bottomNav');
+const loginForm = document.getElementById('loginForm');
+const loginError = document.getElementById('loginError');
+const loginStatus = document.getElementById('loginStatus');
+const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+
+function showLoginError(msg){ loginError.textContent = msg; loginError.classList.add('show'); }
+function hideLoginError(){ loginError.classList.remove('show'); }
+
+loginForm.onsubmit = async (e) => {
+  e.preventDefault();
+  hideLoginError();
+  loginSubmitBtn.disabled = true;
+  loginSubmitBtn.textContent = 'Ingresando...';
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    // onAuthStateChanged se encarga del resto
+  } catch (err) {
+    const map = {
+      'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+      'auth/invalid-email': 'El correo no es válido.',
+      'auth/too-many-requests': 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
+      'auth/network-request-failed': 'Sin conexión a internet. Verifica tu red.',
+    };
+    showLoginError(map[err.code] || 'No se pudo iniciar sesión. Verifica tus datos.');
+  } finally {
+    loginSubmitBtn.disabled = false;
+    loginSubmitBtn.textContent = 'Iniciar sesión';
+  }
+};
+
+let appStarted = false;
+async function startApp(user){
+  if(appStarted) return;
+  appStarted = true;
+  loginStatus.textContent = 'Verificando tu acceso...';
+  try {
+    await ensureUserRole(user);
+  } catch(err){
+    console.error(err);
+    loginStatus.textContent = 'No se pudo verificar tu rol de acceso.';
+    appStarted = false;
+    return;
+  }
+  loginStatus.textContent = 'Cargando datos de la finca...';
+  try {
+    await ensureFincaAndSeed();
+  } catch(err){
+    console.error(err);
+  }
+  // Importante: startRealtimeSync cancela y reinicia la lista de suscripciones activas,
+  // así que se llama primero; los listeners de usuarios/rol se agregan después para que no
+  // queden cancelados accidentalmente apenas se crean.
+  startRealtimeSync(() => {
+    loginScreen.classList.add('hidden');
+    appRoot.style.display = '';
+    STATE.ready = true;
+    renderNav();
+    goTo('dashboard');
+  });
+  subscribeUsuariosIfAdmin();
+  // Escucha cambios en tu propio rol (por si un admin te lo cambia mientras estás dentro)
+  unsubscribers.push(onSnapshot(usuarioDocRef(user.uid), snap => {
+    if(snap.exists()){
+      const nuevoRol = snap.data().rol;
+      if(nuevoRol !== STATE.role){ STATE.role = nuevoRol; refreshIfIdle(); renderNav(); }
+    }
+  }));
+}
+
+onAuthStateChanged(auth, (user) => {
+  if(user){
+    startApp(user);
+  } else {
+    appStarted = false;
+    STATE.ready = false;
+    STATE.role = null;
+    unsubscribers.forEach(u => u());
+    unsubscribers = [];
+    appRoot.style.display = 'none';
+    loginScreen.classList.remove('hidden');
+    loginStatus.textContent = '';
+  }
+});
+
+const logoutHandler = () => signOut(auth);
+document.getElementById('btnLogout').onclick = logoutHandler;
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.error('SW error:', err));
+    });
+  }
+</script>
+</body>
+</html>
